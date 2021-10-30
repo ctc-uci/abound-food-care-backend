@@ -1,0 +1,10 @@
+mode: chatops
+branchName: '${issue.number}-${issue.title,}'
+gitSafeReplacementChar: '-'
+autoCloseIssue: true
+openPR: true
+copyIssueDescriptionToPR: true
+copyIssueLabelsToPR: true
+copyIssueAssigneeToPR: true
+experimental:
+  branchNameArgument: true
