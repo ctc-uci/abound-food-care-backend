@@ -1,5 +1,4 @@
-# npo-backend-template
-This template will be used to create all NPO backend repos
+# Abound Food Care Backend
 
 ## Available Scripts
 
