@@ -1,19 +1,19 @@
 {
-  "name": "npo-backend-template",
+  "name": "abound-food-care-backend",
   "version": "1.0.0",
-  "private": true,
-  "main": "index.js",
-  "repository": "git@github.com:ctc-uci/npo-backend-template.git",
+  "private": false,
+  "main": "app.js",
+  "repository": "git@github.com:ctc-uci/abound-food-care-backend.git",
   "author": "CTC <ctc@uci.edu>",
   "license": "MIT",
   "scripts": {
     "start": "nodemon app.js",
     "prepare": "husky install",
-    "lint": "eslint '**/*.{js}'",
-    "format": "prettier --write \"**/*.+(js)\""
+    "lint": "eslint '**/*.js'",
+    "format": "prettier --write \"**/*.js\""
   },
   "lint-staged": {
-    "*.{js,jsx}": "yarn run eslint"
+    "*.js": "yarn run eslint"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -29,7 +29,6 @@
   },
   "devDependencies": {
     "eslint-config-prettier": "^8.3.0",
-    "lint-staged": "^11.2.6",
-    "husky": "^7.0.0"
+    "lint-staged": "^11.2.6"
   }
 }
