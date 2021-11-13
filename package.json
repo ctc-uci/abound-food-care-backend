@@ -25,6 +25,7 @@
     "express": "^4.17.1",
     "husky": "^7.0.4",
     "nodemon": "^2.0.14",
+    "pg": "^8.7.1",
     "prettier": "^2.4.1"
   },
   "devDependencies": {
