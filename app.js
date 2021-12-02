@@ -51,8 +51,8 @@ app.post('/users/create', async (req, res) => {
     res.json();
   }
 });
-// Create User Endpoint
 
+// Create User Endpoint
 app.post('/users/create', async (req, res) => {
   try {
     const {
