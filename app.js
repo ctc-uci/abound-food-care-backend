@@ -17,7 +17,6 @@ app.listen(PORT, () => {});
 
 // ROUTES //
 // Create Event Endpoint
-
 app.post('/users/create', async (req, res) => {
   try {
     const {
