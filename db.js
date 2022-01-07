@@ -12,16 +12,16 @@ const pool = new Pool({
 
 pool.connect((err, client, release) => {
   if (err) {
-    return console.error(`client error ${err.stack}`, err.stack);
+    console.error(`client error ${err.stack}`, err.stack);
   }
   client.query('SELECT NOW()', (clientErr, result) => {
     release();
     if (clientErr) {
-      return console.error('Error executing query', clientErr.stack);
+      console.error('Error executing query', clientErr.stack);
     }
-    return console.log('should be a timestamp:', result.rows);
+    console.log('should be a timestamp:', result.rows);
   });
-  return console.log('processed');
+  console.log('processed');
 });
 
 module.exports = pool;
