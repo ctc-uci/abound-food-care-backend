@@ -1,13 +1,9 @@
 // need to update username + password + dbname
-const {Pool} = require('pg');
+const { Client } = require('pg');
 require('dotenv').config();
 
-const pool = new Pool({
-  user: 'my_user',
-  host: process.env.HOST,
-  database: process.env.DATABASE,
-  password: process.env.PASSWORD,
-  port: process.env.PORT,
-});
+const connString = `postgres://${process.env.USER}:${process.env.PASSWORD}@${process.env.HOST}:${process.env.DB_PORT}/${process.env.AWS_DB_NAME}`;
+const client = new Client(connString);
+client.connect();
 
-module.exports = pool;
+module.exports = client;

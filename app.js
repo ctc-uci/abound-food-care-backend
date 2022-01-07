@@ -50,3 +50,16 @@ app.post('/users/create', async (req, res) => {
     res.json();
   }
 });
+
+app.post('/driver/create', async (req, res) => {
+  try {
+    const { userId, vehicleType, distance } = req.body;
+    const createDriver = await pool.query(
+      'INSERT INTO users(user_id, vehicle_type, distance) VALUES($1, $2, $3) RETURNING *;',
+      [userId, vehicleType, distance],
+    );
+    res.json(createDriver.rows[0]);
+  } catch (err) {
+    res.json();
+  }
+});
