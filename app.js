@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const pool = require('./db');
 
 require('dotenv').config();
 
@@ -15,4 +16,15 @@ app.use(
 
 app.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);
+});
+
+app.get('/event/:id/get', async (req, res) => {
+  try {
+    const getEventById = await pool.query('SELECT * FROM events WHERE event_id = $1;', [
+      req.params.id,
+    ]);
+    res.json(getEventById.rows);
+  } catch (err) {
+    res.json();
+  }
 });
