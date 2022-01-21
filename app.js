@@ -63,3 +63,14 @@ app.post('/driver/create', async (req, res) => {
     res.json();
   }
 });
+
+app.get('/driver/:id/get', async (req, res) => {
+  try {
+    const getDriverById = await pool.query('SELECT * FROM driver WHERE user_id = $1;', [
+      req.params.id,
+    ]);
+    res.json(getDriverById.rows);
+  } catch (err) {
+    res.json();
+  }
+});
