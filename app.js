@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const pool = require('./db');
 
 require('dotenv').config();
 
@@ -13,6 +14,14 @@ app.use(
   }),
 );
 
-app.listen(PORT, () => {
-  console.log(`Server listening on ${PORT}`);
+app.listen(PORT, () => {});
+
+app.get('/users/:id', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await pool.query('SELECT * FROM users WHERE user_id = $1', [userId]);
+    res.json(user.rows[0]);
+  } catch (err) {
+    res.json();
+  }
 });
