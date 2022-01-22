@@ -8,7 +8,7 @@ eventRouter.use(express.json());
 // endpoints related to events
 
 // Get Event Endpoint
-eventRouter.get('/event/:id', async (req, res) => {
+eventRouter.get('/:id', async (req, res) => {
   try {
     const getEventById = await pool.query('SELECT * FROM event WHERE event_id = $1;', [
       req.params.id,
@@ -20,7 +20,7 @@ eventRouter.get('/event/:id', async (req, res) => {
 });
 
 // Create Event Endpoint
-eventRouter.post('/event/create', async (req, res) => {
+eventRouter.post('/create', async (req, res) => {
   try {
     const {
       name,
