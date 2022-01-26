@@ -20,5 +20,4 @@ app.use('/volunteers', volunteerRouter);
 // routers
 app.use('/event', eventRouter);
 
-
 app.listen(PORT, () => {});
