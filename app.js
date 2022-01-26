@@ -15,7 +15,6 @@ app.use(
   express.json(),
 );
 
-
 app.use('/volunteers', volunteerRouter);
 
 // routers
