@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const eventRouter = require('./routes/events/events');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -14,6 +15,11 @@ app.use(
   express.json(),
 );
 
+
 app.use('/volunteers', volunteerRouter);
+
+// routers
+app.use('/event', eventRouter);
+
 
 app.listen(PORT, () => {});
