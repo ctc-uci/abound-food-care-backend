@@ -7,8 +7,20 @@ const eventRouter = express();
 eventRouter.use(express.json());
 // endpoints related to events
 
+// Get Event Endpoint
+eventRouter.get('/:id', async (req, res) => {
+  try {
+    const getEventById = await pool.query('SELECT * FROM event WHERE event_id = $1;', [
+      req.params.id,
+    ]);
+    res.json(getEventById.rows);
+  } catch (err) {
+    res.json();
+  }
+});
+
 // Create Event Endpoint
-eventRouter.post('/events/create', async (req, res) => {
+eventRouter.post('/create', async (req, res) => {
   try {
     const {
       name,
@@ -23,7 +35,7 @@ eventRouter.post('/events/create', async (req, res) => {
       notes,
     } = req.body;
     const createEvent = await pool.query(
-      'INSERT INTO events(name, ntype, location, startDateTime, endDateTime, volunteerType, volunteerCapacity, fileAttachments, notes) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;',
+      'INSERT INTO event(name, ntype, location, startDateTime, endDateTime, volunteerType, volunteerCapacity, fileAttachments, notes) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;',
       [
         name,
         ntype,
