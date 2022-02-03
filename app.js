@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const userRouter = require('./routes/users/users');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -12,4 +13,5 @@ app.use(
   express.json(),
 );
 
+app.use('/users', userRouter);
 app.listen(PORT, () => {});
