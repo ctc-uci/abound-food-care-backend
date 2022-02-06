@@ -7,8 +7,9 @@ const userRouter = express();
 userRouter.use(express.json());
 userRouter.get('/volunteers', async (req, res) => {
   try {
-    const getVolunteers = await pool.query('SELECT * FROM user WHERE type == 3;');
+    const getVolunteers = await pool.query("SELECT * FROM users WHERE u_type = 'volunteer';");
     res.json(getVolunteers.rows);
+    res.send(200);
   } catch (err) {
     res.json();
     res.status(500);
