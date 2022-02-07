@@ -6,11 +6,12 @@ const volunteerRouter = express();
 
 volunteerRouter.use(express.json());
 
-volunteerRouter.get('/available', async (req, res) => {
+volunteerRouter.get('/available/day/:day/start/:startTime/end/:endTime', async (req, res) => {
   try {
     // get params (hour and day)
-    const { endTime, startTime, day } = req.body;
-    // assume startTime and endTime is a timestamp
+    const day = req.params.day.toLowerCase();
+    const endTime = req.params.endTime.replace('-', ':');
+    const startTime = req.params.startTime.replace('-', ':');
     const volunteers = await pool.query(
       'SELECT u.name FROM availability a INNER JOIN "users" u on u.id = a.user_id WHERE day_of_week = $1 and start_time = $2 and end_time = $3',
       [day, startTime, endTime],
