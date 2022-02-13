@@ -8,11 +8,9 @@ userRouter.use(express.json());
 userRouter.get('/volunteers', async (req, res) => {
   try {
     const getVolunteers = await pool.query("SELECT * FROM users WHERE u_type = 'volunteer';");
-    res.json(getVolunteers.rows);
-    res.send(200);
+    res.status(200).json(getVolunteers.rows);
   } catch (err) {
-    res.json();
-    res.status(500);
+    res.status(400).json(err);
   }
 });
 module.exports = userRouter;
