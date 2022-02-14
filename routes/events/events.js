@@ -116,12 +116,9 @@ eventRouter.put('/:id', async (req, res) => {
       ],
     );
     if (updateEventResponse.rowCount === 0) {
-      // 400 status
       res.status(400).json();
     } else {
-      // convert to proper case
       const newEventResponse = snakeToCamel(updateEventResponse.rows);
-      // status 200, // send new event information
       res.status(200).json(newEventResponse);
     }
   } catch (err) {
