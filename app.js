@@ -2,12 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const userRouter = require('./routes/users/users');
 const eventRouter = require('./routes/events/events');
+const hoursRouter = require('./routes/volunteer_hours/volunteer_hours');
+const volunteerRouter = require('./routes/volunteers/volunteers');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 require('dotenv').config();
-
-const volunteerRouter = require('./routes/volunteers/volunteers');
 
 app.use(
   cors({
@@ -16,9 +16,9 @@ app.use(
   express.json(),
 );
 
-app.use('/volunteers', volunteerRouter);
-
 // routers
+app.use('/hours', hoursRouter);
+app.use('/volunteers', volunteerRouter);
 app.use('/event', eventRouter);
 app.use('/user', userRouter);
 
