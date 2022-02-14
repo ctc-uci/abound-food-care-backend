@@ -96,4 +96,62 @@ eventRouter.post('/create', async (req, res) => {
   }
 });
 
+// Update Event Endpoint
+eventRouter.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      name,
+      ntype,
+      location,
+      startDateTime,
+      endDateTime,
+      volunteerType,
+      volunteerRequirements,
+      volunteerCapacity,
+      fileAttachments,
+      notes,
+    } = req.body;
+
+    const updateEventResponse = await pool.query(
+      `UPDATE event
+        SET
+        name = $1,
+        ntype = $2,
+        location = $3,
+        start_date_time = $4,
+        end_date_time = $5,
+        volunteer_type = $6,
+        volunteer_requirements = $7,
+        volunteer_capacity = $8,
+        file_attachments = $9,
+        notes = $10
+        WHERE event_id = $11
+        RETURNING *`,
+      [
+        name,
+        ntype,
+        location,
+        startDateTime,
+        endDateTime,
+        volunteerType,
+        volunteerRequirements,
+        volunteerCapacity,
+        fileAttachments,
+        notes,
+        id,
+      ],
+    );
+    if (updateEventResponse.rowCount === 0) {
+      res.status(400).json();
+    } else {
+      const newEventResponse = snakeToCamel(updateEventResponse.rows);
+      res.status(200).json(newEventResponse);
+    }
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json(err.message);
+  }
+});
+
 module.exports = eventRouter;
