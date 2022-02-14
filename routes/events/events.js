@@ -5,7 +5,21 @@ const pool = require('../../db');
 const eventRouter = express();
 
 eventRouter.use(express.json());
-// endpoints related to events
+
+function snakeToCamel(events) {
+  return events.map((event) => ({
+    name: event.name,
+    ntype: event.ntype,
+    location: event.location,
+    startDateTime: event.start_date_time,
+    endDateTime: event.end_date_time,
+    volunteerRequirements: event.volunteer_requirements,
+    volunteerCapacity: event.volunteer_requirements,
+    fileAttachments: event.file_attachments,
+    notes: event.notes,
+    id: event.id,
+  }));
+}
 
 // Get Event Endpoint
 eventRouter.get('/:id', async (req, res) => {
@@ -55,8 +69,10 @@ eventRouter.post('/create', async (req, res) => {
   }
 });
 
-eventRouter.get('/events/update', async (req, res) => {
+// Update Event Endpoint
+eventRouter.put('/:id', async (req, res) => {
   try {
+    const { id } = req.params;
     const {
       name,
       ntype,
@@ -69,8 +85,22 @@ eventRouter.get('/events/update', async (req, res) => {
       fileAttachments,
       notes,
     } = req.body;
-    const updateEvent = await pool.query(
-      'UPDATE events(name, ntype, location, startDateTime, endDateTime, volunteerType, volunteerCapacity, fileAttachments, notes) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;',
+
+    const updateEventResponse = await pool.query(
+      `UPDATE event
+        SET
+        name = $1,
+        ntype = $2,
+        location = $3,
+        start_date_time = $4,
+        end_date_time = $5,
+        volunteer_type = $6,
+        volunteer_requirements = $7,
+        volunteer_capacity = $8,
+        file_attachments = $9,
+        notes = $10
+        WHERE event_id = $11
+        RETURNING *`,
       [
         name,
         ntype,
@@ -82,11 +112,21 @@ eventRouter.get('/events/update', async (req, res) => {
         volunteerCapacity,
         fileAttachments,
         notes,
+        id,
       ],
     );
-    res.status(200).json(updateEvent);
+    if (updateEventResponse.rowCount === 0) {
+      // 400 status
+      res.status(400).json();
+    } else {
+      // convert to proper case
+      const newEventResponse = snakeToCamel(updateEventResponse.rows);
+      // status 200, // send new event information
+      res.status(200).json(newEventResponse);
+    }
   } catch (err) {
-    res.status(400).json(err);
+    console.error(err.message);
+    res.status(500).json(err.message);
   }
 });
 
