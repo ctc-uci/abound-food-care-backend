@@ -60,7 +60,6 @@ eventRouter.post('/create', async (req, res) => {
     );
     res.status(200).json(createEvent.rows[0]);
   } catch (err) {
-    console.log(err);
     res.status(400).json({ message: 'error creating new event', 'err:': err });
   }
 });
