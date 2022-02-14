@@ -9,7 +9,7 @@ hoursRouter.use(express.json());
 hoursRouter.get('/unapproved', async (req, res) => {
   try {
     const unapprovedHours = await pool.query(
-      'SELECT * FROM volunteer_hours WHERE approved = False;',
+      'SELECT * FROM volunteer_hours WHERE approved = False AND submitted = True;',
     );
     res.status(200).json(unapprovedHours.rows);
   } catch (err) {
