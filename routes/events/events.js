@@ -6,6 +6,22 @@ const eventRouter = express();
 
 eventRouter.use(express.json());
 
+function snakeToCamel(events) {
+  return events.map((event) => ({
+    name: event.name,
+    ntype: event.ntype,
+    location: event.location,
+    startDateTime: event.start_date_time,
+    endDateTime: event.end_date_time,
+    volunteerType: event.volunteer_type,
+    volunteerRequirements: event.volunteer_requirements,
+    volunteerCapacity: event.volunteer_capacity,
+    fileAttachments: event.fileAttachments,
+    notes: event.notes,
+    id: event.event_id,
+  }));
+}
+
 // endpoints related to events
 eventRouter.get('/', async (req, res) => {
   try {
@@ -42,9 +58,20 @@ eventRouter.post('/create', async (req, res) => {
       fileAttachments,
       notes,
     } = req.body;
-    console.log(req.body);
-    const createEvent = await pool.query(
-      'INSERT INTO event(name, ntype, location, start_datetime, end_datetime, volunteer_type, volunteer_requirements, volunteer_capacity, file_attachments, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *;',
+    const createEventResponse = await pool.query(
+      `INSERT INTO event(
+        name,
+        ntype,
+        location,
+        start_datetime,
+        end_datetime,
+        volunteer_type,
+        volunteer_requirements,
+        volunteer_capacity,
+        file_attachments,
+        notes)
+        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING *`,
       [
         name,
         ntype,
@@ -58,9 +85,14 @@ eventRouter.post('/create', async (req, res) => {
         notes,
       ],
     );
-    res.status(200).json(createEvent.rows[0]);
+    if (createEventResponse.rowCount === 0) {
+      res.status(400).send();
+    } else {
+      const event = snakeToCamel(createEventResponse.rows);
+      res.status(200).send(event);
+    }
   } catch (err) {
-    res.status(400).json({ message: 'error creating new event', 'err:': err });
+    res.status(500).json(err.message);
   }
 });
 
