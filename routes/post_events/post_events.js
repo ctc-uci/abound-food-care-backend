@@ -17,11 +17,12 @@ function snakeToCamel(postevents) {
 
 // Update Post Event Endpoint
 postEventsRouter.post('/:id', async (req, res) => {
-    try {
+  try {
     const { description } = req.body;
-    const updatePostEvents = await pool.query('UPDATE postevent SET description =$1 WHERE postevent_id = $2;', [
-      description, req.params.id
-    ]);
+    const updatePostEvents = await pool.query(
+      'UPDATE postevent SET description =$1 WHERE postevent_id = $2 RETURNING *;',
+      [description, req.params.id],
+    );
     res.json(snakeToCamel(updatePostEvents.rows));
   } catch (err) {
     res.json();
@@ -29,4 +30,3 @@ postEventsRouter.post('/:id', async (req, res) => {
 });
 
 module.exports = postEventsRouter;
-
