@@ -48,6 +48,17 @@ hoursRouter.get('/submitted', async (req, res) => {
   } catch (err) {
     res.status(400).json(err);
   }
+
+hoursRouter.get('/unapproved', async (req, res) => {
+  try {
+    const unapprovedHours = await pool.query(
+      'SELECT * FROM volunteer_hours WHERE approved = False AND submitted = True;',
+    );
+    res.status(200).json(unapprovedHours.rows);
+
+  } catch (err) {
+    res.status(400).json(err);
+  }
 });
 
 module.exports = hoursRouter;
