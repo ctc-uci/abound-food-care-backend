@@ -7,13 +7,13 @@ const userRouter = express();
 userRouter.use(express.json());
 
 // Get user by id endpoint
-userRouter.get('/users/:id', async (req, res) => {
+userRouter.get('/:id', async (req, res) => {
   try {
-    const { userId } = req.params;
-    const user = await pool.query('SELECT * FROM users WHERE user_id = $1', [userId]);
-    res.json(user.rows[0]);
+    const { id } = req.params;
+    const user = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+    res.status(200).json(user.rows);
   } catch (err) {
-    res.json();
+    res.status(500).json(err.message);
   }
 });
 
