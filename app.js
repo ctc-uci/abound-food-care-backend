@@ -1,6 +1,9 @@
 const express = require('express');
 const cors = require('cors');
-const pool = require('./db');
+const userRouter = require('./routes/users/users');
+const eventRouter = require('./routes/events/events');
+const hoursRouter = require('./routes/volunteer_hours/volunteer_hours');
+const volunteerRouter = require('./routes/volunteers/volunteers');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -13,14 +16,10 @@ app.use(
   express.json(),
 );
 
-app.listen(PORT, () => {});
+// routers
+app.use('/hours', hoursRouter);
+app.use('/volunteers', volunteerRouter);
+app.use('/event', eventRouter);
+app.use('/user', userRouter);
 
-app.get('/users/:id', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const user = await pool.query('SELECT * FROM users WHERE user_id = $1', [userId]);
-    res.json(user.rows[0]);
-  } catch (err) {
-    res.json();
-  }
-});
+app.listen(PORT, () => {});
