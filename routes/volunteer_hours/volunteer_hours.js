@@ -11,8 +11,8 @@ hoursRouter.post('/create', async (req, res) => {
   try {
     const { userId, eventId, startDatetime, endDatetime, approved, notes } = req.body;
     // calculate number of hours
-    const start = new Date(start_datetime);
-    const end = new Date(end_datetime);
+    const start = new Date(startDatetime);
+    const end = new Date(endDatetime);
     const diff = end.getTime() - start.getTime();
     const numHours = diff / (60000 * 60);
 
@@ -48,6 +48,7 @@ hoursRouter.get('/submitted', async (req, res) => {
   } catch (err) {
     res.status(400).json(err);
   }
+});
 
 hoursRouter.get('/unapproved', async (req, res) => {
   try {
@@ -55,7 +56,6 @@ hoursRouter.get('/unapproved', async (req, res) => {
       'SELECT * FROM volunteer_hours WHERE approved = False AND submitted = True;',
     );
     res.status(200).json(unapprovedHours.rows);
-
   } catch (err) {
     res.status(400).json(err);
   }
