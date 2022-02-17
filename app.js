@@ -19,7 +19,7 @@ app.use(
 // routers
 app.use('/hours', hoursRouter);
 app.use('/volunteers', volunteerRouter);
-app.use('/event', eventRouter);
-app.use('/user', userRouter);
+app.use('/events', eventRouter);
+app.use('/users', userRouter);
 
 app.listen(PORT, () => {});
