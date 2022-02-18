@@ -18,7 +18,20 @@ volunteerRouter.get('/available/day/:day/start/:startTime/end/:endTime', async (
     );
     res.status(200).json(volunteers.rows);
   } catch (err) {
-    res.status(400).json(err);
+    res.status(500).json(err);
+  }
+});
+
+// get volunteer's events by id
+volunteerRouter.get('/:id', async (req, res) => {
+  try {
+    const getEvents = await pool.query(
+      'SELECT event_id FROM volunteer_at_events WHERE user_id = $1;',
+      [req.params.id],
+    );
+    res.status(200).json(getEvents.rows);
+  } catch (err) {
+    res.status(500).json(err.message);
   }
 });
 
