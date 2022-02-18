@@ -8,12 +8,13 @@ require('dotenv').config();
 
 const volunteerRouter = require('./routes/volunteers/volunteers');
 
-app.use(
-  cors({
-    origin: `${process.env.REACT_APP_HOST}:${process.env.REACT_APP_PORT}`,
-  }),
-  express.json(),
-);
+const corsOptions = {
+  origin: `${process.env.REACT_APP_HOST}:${process.env.REACT_APP_PORT}`,
+  credentials: true, // access-control-allow-credentials:true
+  optionSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
+app.options('*', cors());
 
 app.use('/volunteers', volunteerRouter);
 
