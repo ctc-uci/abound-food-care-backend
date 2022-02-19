@@ -22,14 +22,17 @@ function snakeToCamel(events) {
   }));
 }
 
-// endpoints related to events
+// Get All Events Endpoint
 eventRouter.get('/', async (req, res) => {
   try {
-    res.status(200).send('events page');
+    const getAllEvents = await pool.query('SELECT * FROM event ORDER BY start_datetime ASC;');
+    res.status(200).send(getAllEvents.rows);
   } catch (err) {
-    res.status(400).json({ message: 'error getting events page', 'err:': err });
+    console.error(err.message);
+    res.status(500).json(err.message);
   }
 });
+
 // Get Event Endpoint
 eventRouter.get('/:id', async (req, res) => {
   try {
@@ -38,8 +41,8 @@ eventRouter.get('/:id', async (req, res) => {
     ]);
     res.status(200).json(getEventById.rows);
   } catch (err) {
-    console.log(err);
-    res.status(400).json({ message: 'error getting event by id', 'err:': err });
+    console.error(err.message);
+    res.status(500).json(err.message);
   }
 });
 
