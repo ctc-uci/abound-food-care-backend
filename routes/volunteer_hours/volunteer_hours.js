@@ -20,9 +20,13 @@ hoursRouter.post('/create', async (req, res) => {
       'INSERT INTO volunteer_hours(user_id, event_id, start_datetime, end_datetime, approved, num_hours, notes, submitted) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;',
       [userId, eventId, startDatetime, endDatetime, approved, numHours, notes, true],
     );
-    res.status(200).json(createdHours.rows[0]);
+    if (createdHours.rows.length === 0) {
+      res.status(400).json();
+    } else {
+      res.status(200).json(createdHours.rows);
+    }
   } catch (err) {
-    res.status(400).json(err);
+    res.status(500).json(err);
   }
 });
 
@@ -34,7 +38,7 @@ hoursRouter.get('/unsubmitted', async (req, res) => {
     );
     res.status(200).json(unsubmittedHours.rows);
   } catch (err) {
-    res.status(400).json(err);
+    res.status(500).json(err);
   }
 });
 
@@ -46,7 +50,7 @@ hoursRouter.get('/submitted', async (req, res) => {
     );
     res.status(200).json(submittedHours.rows);
   } catch (err) {
-    res.status(400).json(err);
+    res.status(500).json(err);
   }
 });
 

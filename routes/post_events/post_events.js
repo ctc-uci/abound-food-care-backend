@@ -23,9 +23,13 @@ postEventsRouter.post('/:id', async (req, res) => {
       'UPDATE postevent SET description =$1 WHERE postevent_id = $2 RETURNING *;',
       [description, req.params.id],
     );
-    res.json(snakeToCamel(updatePostEvents.rows));
+    if (updatePostEvents.rows.length === 0) {
+      res.status(400).json();
+    } else {
+      res.status(200).json(snakeToCamel(updatePostEvents.rows));
+    }
   } catch (err) {
-    res.json();
+    res.status(500).json(err);
   }
 });
 
