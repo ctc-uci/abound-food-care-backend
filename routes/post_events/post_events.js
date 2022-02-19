@@ -5,7 +5,6 @@ const pool = require('../../db');
 const postEventsRouter = express();
 
 postEventsRouter.use(express.json());
-// endpoints related to post events
 
 function snakeToCamel(postevents) {
   return postevents.map((postevent) => ({
@@ -16,7 +15,7 @@ function snakeToCamel(postevents) {
 }
 
 // Update Post Event Endpoint
-postEventsRouter.post('/:id', async (req, res) => {
+postEventsRouter.put('/:id', async (req, res) => {
   try {
     const { description } = req.body;
     const updatePostEvents = await pool.query(

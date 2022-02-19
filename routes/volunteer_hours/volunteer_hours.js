@@ -14,7 +14,7 @@ hoursRouter.post('/create', async (req, res) => {
     const start = new Date(startDatetime);
     const end = new Date(endDatetime);
     const diff = end.getTime() - start.getTime();
-    const numHours = diff / (60000 * 60);
+    const numHours = parseInt(diff / (60000 * 60), 10);
 
     const createdHours = await pool.query(
       'INSERT INTO volunteer_hours(user_id, event_id, start_datetime, end_datetime, approved, num_hours, notes, submitted) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;',
@@ -26,7 +26,7 @@ hoursRouter.post('/create', async (req, res) => {
       res.status(200).json(createdHours.rows);
     }
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json(err.message);
   }
 });
 
@@ -38,7 +38,7 @@ hoursRouter.get('/unsubmitted', async (req, res) => {
     );
     res.status(200).json(unsubmittedHours.rows);
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json(err.message);
   }
 });
 
@@ -50,7 +50,7 @@ hoursRouter.get('/submitted', async (req, res) => {
     );
     res.status(200).json(submittedHours.rows);
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json(err.message);
   }
 });
 
@@ -61,7 +61,7 @@ hoursRouter.get('/unapproved', async (req, res) => {
     );
     res.status(200).json(unapprovedHours.rows);
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json(err.message);
   }
 });
 
