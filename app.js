@@ -3,13 +3,12 @@ const cors = require('cors');
 const userRouter = require('./routes/users/users');
 const eventRouter = require('./routes/events/events');
 const hoursRouter = require('./routes/volunteer_hours/volunteer_hours');
+const postEventsRouter = require('./routes/post_events/post_events');
 const volunteerRouter = require('./routes/volunteers/volunteers');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 require('dotenv').config();
-
-const volunteerRouter = require('./routes/volunteers/volunteers');
 
 const corsOptions = {
   origin: `${process.env.REACT_APP_HOST}:${process.env.REACT_APP_PORT}`,
@@ -22,6 +21,7 @@ app.options('*', cors());
 // routers
 app.use('/hours', hoursRouter);
 app.use('/volunteers', volunteerRouter);
+app.use('/postevents', postEventsRouter);
 app.use('/events', eventRouter);
 app.use('/users', userRouter);
 
