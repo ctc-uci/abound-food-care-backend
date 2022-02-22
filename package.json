@@ -16,6 +16,7 @@
     "*.js": "yarn run eslint"
   },
   "dependencies": {
+    "circular-json": "^0.5.9",
     "cors": "^2.8.5",
     "dotenv": "^10.0.0",
     "eslint": "^8.2.0",
@@ -24,6 +25,7 @@
     "eslint-plugin-prettier": "^4.0.0",
     "express": "^4.17.1",
     "husky": "^7.0.4",
+    "node-addon-api": "^4.3.0",
     "nodemon": "^2.0.14",
     "pg": "^8.7.1",
     "prettier": "^2.4.1"
