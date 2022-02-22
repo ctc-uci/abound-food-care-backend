@@ -26,7 +26,8 @@ driverRouter.get('/:id', async (req, res) => {
     const getDriverById = await pool.query('SELECT * FROM driver WHERE user_id = $1;', [
       req.params.id,
     ]);
-    res.status(200).send(getDriverById.rows[0]);
+    const data = getDriverById.rows[0];
+    res.status(200).send(data || `no driver with user_id: ${req.params.id}`);
   } catch (err) {
     res.status(400).send(err);
   }
