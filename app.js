@@ -4,7 +4,7 @@ const userRouter = require('./routes/users/users');
 const eventRouter = require('./routes/events/events');
 const volunteerAtEventsRouter = require('./routes/volunteer_at_events/volunteer_at_events');
 const hoursRouter = require('./routes/volunteer_hours/volunteer_hours');
-const postEventsRouter = require('./routes/post_events/post_events');
+const postEventsRouter = require('./routes/postevents/postevents');
 const volunteerRouter = require('./routes/volunteers/volunteers');
 const driverRouter = require('./routes/drivers/drivers');
 
