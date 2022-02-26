@@ -10,7 +10,6 @@ hoursRouter.use(express.json());
 hoursRouter.post('/create', async (req, res) => {
   try {
     const { userId, eventId, startDatetime, endDatetime, approved, notes } = req.body;
-    // calculate number of hours
     const start = new Date(startDatetime);
     const end = new Date(endDatetime);
     const diff = end.getTime() - start.getTime();
@@ -70,11 +69,24 @@ hoursRouter.get('/unsubmittedUser/:id', async (req, res) => {
 // getSubmittedHoursByUserId
 hoursRouter.get('/submittedUser/:id', async (req, res) => {
   try {
-    const unsubmittedHours = await pool.query(
-      'SELECT v.start_datetime, v.end_datetime, v.num_hours, v.notes, e.name FROM volunteer_hours v, event e WHERE v.event_id = e.event_id AND submitted = True AND user_id = $1 ORDER BY v.start_datetime',
+    const submittedHours = await pool.query(
+      'SELECT v.start_datetime, v.end_datetime, v.num_hours, v.notes, e.name, v.start_datetime AS date FROM volunteer_hours v, event e WHERE v.event_id = e.event_id AND submitted = True AND user_id = $1 ORDER BY v.start_datetime',
       [req.params.id],
     );
-    res.status(200).json(unsubmittedHours.rows);
+    res.status(200).json(submittedHours.rows);
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
+});
+
+// getVolunteerStatistics
+hoursRouter.get('/statistics/:id', async (req, res) => {
+  try {
+    const volunteerStats = await pool.query(
+      'SELECT COUNT(v.event_id) as event_count, SUM(v.num_hours) as hours FROM volunteer_hours v WHERE submitted = True AND user_id = $1',
+      [req.params.id],
+    );
+    res.status(200).json(volunteerStats.rows);
   } catch (err) {
     res.status(500).json(err.message);
   }
