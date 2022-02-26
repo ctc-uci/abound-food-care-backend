@@ -58,7 +58,7 @@ hoursRouter.get('/submitted', async (req, res) => {
 hoursRouter.get('/unsubmittedUser/:id', async (req, res) => {
   try {
     const unsubmittedHours = await pool.query(
-      'SELECT v.start_datetime, v.end_datetime, v.num_hours, v.notes, e.name FROM volunteer_hours v, event e WHERE v.event_id = e.event_id AND submitted = False AND user_id = $1 ORDER BY v.start_datetime',
+      'SELECT v.start_datetime, v.end_datetime, v.num_hours, v.notes, e.name, e.event_id, v.start_datetime AS date FROM volunteer_hours v, event e WHERE v.event_id = e.event_id AND submitted = False AND user_id = $1 ORDER BY v.start_datetime',
       [req.params.id],
     );
     res.status(200).json(unsubmittedHours.rows);
