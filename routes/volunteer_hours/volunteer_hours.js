@@ -6,8 +6,8 @@ const hoursRouter = express();
 
 hoursRouter.use(express.json());
 
-// createSubmittedHours
-hoursRouter.post('/create', async (req, res) => {
+// submitHours
+hoursRouter.post('/submit', async (req, res) => {
   try {
     const { userId, eventId, startDatetime, endDatetime, approved, notes } = req.body;
     const start = new Date(startDatetime);
@@ -16,7 +16,7 @@ hoursRouter.post('/create', async (req, res) => {
     const numHours = parseInt(diff / (60000 * 60), 10);
 
     const createdHours = await pool.query(
-      'INSERT INTO volunteer_hours(user_id, event_id, start_datetime, end_datetime, approved, num_hours, notes, submitted) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;',
+      'UPDATE volunteer_hours SET start_datetime = $3, end_datetime = $4, approved = $5, num_hours = $6, notes = $7, submitted = $8 WHERE user_id = $1 AND event_id = $2 RETURNING *;',
       [userId, eventId, startDatetime, endDatetime, approved, numHours, notes, true],
     );
     if (createdHours.rows.length === 0) {
