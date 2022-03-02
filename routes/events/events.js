@@ -40,7 +40,7 @@ eventRouter.get('/', async (req, res) => {
 // Get Event Endpoint
 eventRouter.get('/:id', async (req, res) => {
   try {
-    const getEventById = await pool.query('SELECT * FROM event WHERE event.eventId = $1;', [
+    const getEventById = await pool.query('SELECT * FROM event WHERE event.event_id = $1;', [
       req.params.id,
     ]);
     res.status(200).json(getEventById.rows);

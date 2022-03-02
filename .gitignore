@@ -104,3 +104,6 @@ dist
 .tern-port
 
 .DS_Store
+
+# Firebase SDK
+firebase-adminsdk.json
