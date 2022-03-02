@@ -57,7 +57,6 @@ userRouter.post('/create', async (req, res) => {
     );
     res.status(200).json(createUser.rows);
   } catch (err) {
-    console.error(err);
     res.status(400).send(err);
   }
 });
