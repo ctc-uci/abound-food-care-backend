@@ -6,6 +6,31 @@ const hoursRouter = express();
 
 hoursRouter.use(express.json());
 
+// create unsubmitted hours
+hoursRouter.post('/create', async (req, res) => {
+  try {
+    const { userId, eventId, startDatetime, endDatetime, approved, notes } = req.body;
+    // calculate number of hours
+    const start = new Date(startDatetime);
+    const end = new Date(endDatetime);
+    const diff = end.getTime() - start.getTime();
+    const numHours = parseInt(diff / (60000 * 60), 10);
+
+    const createdHours = await pool.query(
+      'INSERT INTO volunteer_hours(user_id, event_id, start_datetime, end_datetime, approved, num_hours, notes, submitted) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;',
+      [userId, eventId, startDatetime, endDatetime, approved, numHours, notes, false],
+    );
+    if (createdHours.rows.length === 0) {
+      res.status(400).json();
+    } else {
+      res.status(200).json(createdHours.rows);
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json(err.message);
+  }
+});
+
 // submitHours
 hoursRouter.post('/submit', async (req, res) => {
   try {
