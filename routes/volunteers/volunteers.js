@@ -20,7 +20,7 @@ volunteerRouter.get('/available/day/:day/start/:startTime/end/:endTime', async (
     res.status(200).json(volunteers.rows);
   } catch (err) {
     console.error(err);
-    res.status(400).json(err);
+    res.status(400).json(err.message);
   }
 });
 
@@ -41,8 +41,7 @@ volunteerRouter.get('/available', async (req, res) => {
 
     res.status(200).json(resData);
   } catch (err) {
-    console.error(err);
-    res.status(400).json(err);
+    res.status(400).json(err.message);
   }
 });
 
