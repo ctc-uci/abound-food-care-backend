@@ -31,7 +31,7 @@ hoursRouter.post('/create', async (req, res) => {
 });
 
 // submitHours
-hoursRouter.post('/submit', async (req, res) => {
+hoursRouter.put('/submit', async (req, res) => {
   try {
     const { userId, eventId, startDatetime, endDatetime, approved, notes } = req.body;
     const start = new Date(startDatetime);
