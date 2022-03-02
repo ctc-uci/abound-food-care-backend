@@ -17,8 +17,8 @@ hoursRouter.post('/create', async (req, res) => {
     const numHours = parseInt(diff / (60000 * 60), 10);
 
     const createdHours = await pool.query(
-      'INSERT INTO volunteer_hours(user_id, event_id, start_datetime, end_datetime, approved, num_hours, notes, submitted) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *;',
-      [userId, eventId, startDatetime, endDatetime, approved, numHours, notes, false],
+      'INSERT INTO volunteer_hours(user_id, event_id, start_datetime, end_datetime, approved, num_hours, notes, submitted, declined) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *;',
+      [userId, eventId, startDatetime, endDatetime, approved, numHours, notes, false, false],
     );
     if (createdHours.rows.length === 0) {
       res.status(400).json();
