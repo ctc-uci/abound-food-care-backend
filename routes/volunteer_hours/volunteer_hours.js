@@ -26,7 +26,6 @@ hoursRouter.post('/create', async (req, res) => {
       res.status(200).json(createdHours.rows);
     }
   } catch (err) {
-    console.error(err);
     res.status(500).json(err.message);
   }
 });
