@@ -28,4 +28,6 @@ app.use('/users', userRouter);
 app.use('/drivers', driverRouter);
 
 app.use('/users', userRouter);
-app.listen(PORT, () => {});
+app.listen(PORT, () => {
+  console.log(`App now listening on port ${PORT}`);
+});
