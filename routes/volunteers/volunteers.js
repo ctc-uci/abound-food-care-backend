@@ -61,7 +61,7 @@ volunteerRouter.get('/available', async (req, res) => {
   }
 });
 
-// get volunteers at specific event
+// get number of volunteers at specific event
 volunteerRouter.get('/:eventId', async (req, res) => {
   const { eventId } = req.params;
   try {
@@ -74,7 +74,7 @@ volunteerRouter.get('/:eventId', async (req, res) => {
     );
     res.status(200).json(volunteers.rows[0]);
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(400).json(err.message);
   }
 });
 
