@@ -26,7 +26,11 @@ function snakeToCamel(events) {
 eventRouter.get('/', async (req, res) => {
   try {
     const getAllEvents = await pool.query('SELECT * FROM event ORDER BY start_datetime ASC;');
-    res.status(200).send(getAllEvents.rows);
+    if (getAllEvents.rowCount === 0) {
+      res.status(400).json();
+    } else {
+      res.status(200).json(snakeToCamel(getAllEvents.rows));
+    }
   } catch (err) {
     console.error(err.message);
     res.status(500).json(err.message);
