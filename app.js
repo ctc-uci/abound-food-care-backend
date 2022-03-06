@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const userRouter = require('./routes/users/users');
 const eventRouter = require('./routes/events/events');
 const hoursRouter = require('./routes/volunteer_hours/volunteer_hours');
@@ -17,6 +18,7 @@ const corsOptions = {
   optionSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
+app.use(cookieParser());
 app.options('*', cors());
 
 // routers
@@ -29,5 +31,5 @@ app.use('/drivers', driverRouter);
 
 app.use('/users', userRouter);
 app.listen(PORT, () => {
-  console.log(`App now listening on port ${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
 });
