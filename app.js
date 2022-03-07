@@ -27,4 +27,5 @@ app.use('/events', eventRouter);
 app.use('/users', userRouter);
 app.use('/drivers', driverRouter);
 
+app.use('/users', userRouter);
 app.listen(PORT, () => {});
