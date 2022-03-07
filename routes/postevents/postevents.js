@@ -22,6 +22,12 @@ posteventRouter.get('/:eventId', async (req, res) => {
 posteventRouter.post('/create', async (req, res) => {
   try {
     const { eventId, description } = req.body;
+    const checkPostEventExists = await pool.query('SELECT * FROM postevent WHERE event_id = $1;', [
+      eventId,
+    ]);
+    if (checkPostEventExists.rows.length !== 0) {
+      res.status(400).send(`Postevent already exists for event_id ${eventId}`);
+    }
     const createPostEvent = await pool.query(
       'INSERT INTO postevent (event_id, description) VALUES($1, $2) RETURNING *;',
       [eventId, description],
