@@ -43,7 +43,6 @@ volunteerRouter.get('/:userId/events/', async (req, res) => {
 volunteerRouter.get('/available', async (req, res) => {
   try {
     const resData = {};
-
     // assume startTime and endTime is a timestamp
     const volunteers = await pool.query('SELECT * FROM availability');
     volunteers.rows.forEach((volunteerHour) => {
@@ -60,6 +59,19 @@ volunteerRouter.get('/available', async (req, res) => {
     res.status(400).json(err.message);
   }
 });
+
+
+// Create Volunteer At Event
+volunteerRouter.post('/event/join', async (req, res) => {
+  try {
+    const { userId, eventId, notes } = req.body;
+    const createVolunteerAtEvent = await pool.query(
+      'INSERT INTO volunteer_at_events (user_id, event_id, notes) VALUES($1, $2, $3) RETURNING *',
+      [userId, eventId, notes],
+    );
+    res.status(200).json(createVolunteerAtEvent.rows[0]);
+  } catch (err) {
+    res.status(400).json(err);
 
 // get number of volunteers at specific event
 volunteerRouter.get('/:eventId', async (req, res) => {

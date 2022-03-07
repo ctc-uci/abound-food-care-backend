@@ -161,4 +161,17 @@ eventRouter.put('/:id', async (req, res) => {
   }
 });
 
+// Get Volunteers By Event
+eventRouter.get('/:id/volunteers', async (req, res) => {
+  try {
+    const getVolunteerByEvent = await pool.query(
+      'SELECT user_id FROM volunteer_at_events WHERE event_id = $1;',
+      [req.params.id],
+    );
+    res.status(200).json(getVolunteerByEvent.rows);
+  } catch (err) {
+    res.status(400).json(err);
+  }
+});
+
 module.exports = eventRouter;

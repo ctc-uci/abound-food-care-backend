@@ -27,7 +27,7 @@ driverRouter.get('/:id', async (req, res) => {
       req.params.id,
     ]);
     const data = getDriverById.rows[0];
-    res.status(200).send(data || `no driver with user_id: ${req.params.id}`);
+    res.status(200).send(data || {});
   } catch (err) {
     res.status(400).send(err);
   }
