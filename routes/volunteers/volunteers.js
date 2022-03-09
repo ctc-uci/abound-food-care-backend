@@ -60,7 +60,6 @@ volunteerRouter.get('/available', async (req, res) => {
   }
 });
 
-
 // Create Volunteer At Event
 volunteerRouter.post('/event/join', async (req, res) => {
   try {
@@ -72,7 +71,8 @@ volunteerRouter.post('/event/join', async (req, res) => {
     res.status(200).json(createVolunteerAtEvent.rows[0]);
   } catch (err) {
     res.status(400).json(err);
-
+  }
+});
 // get number of volunteers at specific event
 volunteerRouter.get('/:eventId', async (req, res) => {
   const { eventId } = req.params;
