@@ -94,6 +94,7 @@ userRouter.get('/getEvents/:id', async (req, res) => {
   }
 });
 
+// get languages of volunteer by their id
 userRouter.get('/getLanguages/:id', async (req, res) => {
   try {
     const getLanguages = await pool.query('SELECT language FROM language WHERE user_id = $1;', [
@@ -101,7 +102,7 @@ userRouter.get('/getLanguages/:id', async (req, res) => {
     ]);
     res.status(200).json(getLanguages.rows);
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(400).json(err.message);
   }
 });
 

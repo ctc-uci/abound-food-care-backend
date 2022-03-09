@@ -28,5 +28,4 @@ app.use('/users', userRouter);
 app.use('/drivers', driverRouter);
 
 app.use('/users', userRouter);
-console.log(PORT);
 app.listen(PORT, () => {});
