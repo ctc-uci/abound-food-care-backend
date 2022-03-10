@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.event
 CREATE TABLE IF NOT EXISTS public.postevent
 (
     event_id integer,
-    postevent_id integer NOT NULL,
+    postevent_id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
     description text COLLATE pg_catalog."default",
     CONSTRAINT postevent_pkey PRIMARY KEY (postevent_id),
     CONSTRAINT event_id FOREIGN KEY (event_id)
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS public.volunteer_at_events
 (
     user_id integer NOT NULL,
     event_id integer NOT NULL,
-    notes text COLLATE pg_catalog."default",
+    notes character varying COLLATE pg_catalog."default",
     CONSTRAINT event_id FOREIGN KEY (event_id)
         REFERENCES public.event (event_id) MATCH SIMPLE
         ON UPDATE NO ACTION
@@ -44,16 +44,11 @@ CREATE TABLE IF NOT EXISTS public.volunteer_at_events
         NOT VALID
 );
 
-CREATE TABLE IF NOT EXISTS public.volunteer_hours
+CREATE TABLE IF NOT EXISTS public.volunteer_at_events
 (
     user_id integer NOT NULL,
     event_id integer NOT NULL,
-    start_datetime timestamp with time zone NOT NULL,
-    end_datetime timestamp with time zone NOT NULL,
-    approved boolean NOT NULL,
-    num_hours integer,
-    notes text COLLATE pg_catalog."default",
-    submitted boolean,
+    notes character varying COLLATE pg_catalog."default",
     CONSTRAINT event_id FOREIGN KEY (event_id)
         REFERENCES public.event (event_id) MATCH SIMPLE
         ON UPDATE NO ACTION
