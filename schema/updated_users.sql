@@ -9,13 +9,13 @@ DROP TABLE users CASCADE;
 CREATE TABLE users (
   user_id VARCHAR(128) PRIMARY KEY, -- renamed from id and changed to use the firebase id
   role roles NOT NULL, -- changed to use ENUM
-  first_name VARCHAR(255) NOT NULL, -- split from name
+  first_name VARCHAR(255) NOT NULL,
   last_name VARCHAR(255) NOT NULL,
   birthdate DATE NOT NULL,
   email VARCHAR(255) NOT NULL, -- changed to 255 max length
   phone VARCHAR(15) NOT NULL, -- changed to VARCHAR(15)
   preferred_contact_method contact_methods, -- changed to use ENUM, should this be required?
-  address_street VARCHAR(255) NOT NULL, -- split physical_address into these three
+  address_street VARCHAR(255) NOT NULL, -- added `address` to these three
   address_city VARCHAR(255) NOT NULL,
   address_zip VARCHAR(5) NOT NULL,
   weight_lifting_ability INT, -- should this be required?

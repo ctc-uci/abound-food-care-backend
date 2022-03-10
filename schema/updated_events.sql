@@ -15,21 +15,10 @@ CREATE TABLE events (
   postevent_text TEXT, -- merge postevent table into event table, lmk if this is fine
 );
 
-DROP TABLE post_event CASCADE;
-CREATE TABLE post_event (
-  event_id INT PRIMARY KEY REFERENCES events(event_id) ON DELETE CASCADE,
-
-);
-
 DROP TABLE volunteer_at_events CASCADE;
 CREATE TABLE volunteer_at_events (
   user_id VARCHAR(128) REFERENCES users(user_id) ON DELETE CASCADE, -- what should happen if user is deleted?
   event_id INT REFERENCES events(event_id) ON DELETE CASCADE, -- what should happen if event is deleted?
-  start_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
-  end_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
-  approved BOOLEAN NOT NULL,
-  num_hours INT, -- should this be required?
-  submitted BOOLEAN, -- what does this mean exactly?
   notes TEXT,
   UNIQUE(user_id, event_id),
 );
