@@ -3,7 +3,7 @@ const cors = require('cors');
 const userRouter = require('./routes/users/users');
 const eventRouter = require('./routes/events/events');
 const hoursRouter = require('./routes/volunteer_hours/volunteer_hours');
-const postEventsRouter = require('./routes/postevents/postevents');
+const posteventRouter = require('./routes/postevents/postevents');
 const volunteerRouter = require('./routes/volunteers/volunteers');
 const driverRouter = require('./routes/drivers/drivers');
 
@@ -22,7 +22,7 @@ app.options('*', cors());
 // routers
 app.use('/hours', hoursRouter);
 app.use('/volunteers', volunteerRouter);
-app.use('/postevents', postEventsRouter);
+app.use('/postevents', posteventRouter);
 app.use('/events', eventRouter);
 app.use('/users', userRouter);
 app.use('/drivers', driverRouter);
