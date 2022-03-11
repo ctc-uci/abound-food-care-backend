@@ -131,10 +131,35 @@ userRouter.get('/:id', async (req, res) => {
 // Get volunteers endpoint
 userRouter.get('/volunteers', async (req, res) => {
   try {
-    const getVolunteers = await pool.query("SELECT * FROM users WHERE u_type = 'volunteer';");
+    const getVolunteers = await pool.query(`SELECT * FROM users WHERE u_type = 'volunteer';`);
     res.status(200).json(getVolunteers.rows);
   } catch (err) {
-    res.status(500).json(err);
+    res.status(500).json(err.message);
+  }
+});
+
+// get volunteer's events by id
+userRouter.get('/getEvents/:id', async (req, res) => {
+  try {
+    const getEvents = await pool.query(
+      'SELECT event_id FROM volunteer_at_events WHERE user_id = $1;',
+      [req.params.id],
+    );
+    res.status(200).json(getEvents.rows);
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
+});
+
+// get languages of user by their id
+userRouter.get('/getLanguages/:id', async (req, res) => {
+  try {
+    const getLanguages = await pool.query('SELECT language FROM language WHERE user_id = $1;', [
+      req.params.id,
+    ]);
+    res.status(200).json(getLanguages.rows);
+  } catch (err) {
+    res.status(400).json(err.message);
   }
 });
 
