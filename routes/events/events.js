@@ -32,7 +32,6 @@ eventRouter.get('/', async (req, res) => {
       res.status(200).json(snakeToCamel(getAllEvents.rows));
     }
   } catch (err) {
-    console.error(err.message);
     res.status(500).json(err.message);
   }
 });
@@ -45,7 +44,6 @@ eventRouter.get('/:id', async (req, res) => {
     ]);
     res.status(200).json(getEventById.rows);
   } catch (err) {
-    console.error(err.message);
     res.status(500).json(err.message);
   }
 });
@@ -156,7 +154,6 @@ eventRouter.put('/:id', async (req, res) => {
       res.status(200).json(newEventResponse);
     }
   } catch (err) {
-    console.error(err.message);
     res.status(500).json(err.message);
   }
 });
