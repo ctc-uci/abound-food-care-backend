@@ -106,7 +106,6 @@ hoursRouter.get('/submittedUser/:id', async (req, res) => {
 // getVolunteerStatistics
 hoursRouter.get('/statistics/:id', async (req, res) => {
   try {
-    console.log(req.params.id);
     const volunteerStats = await pool.query(
       'SELECT COUNT(v.event_id) as event_count, SUM(v.num_hours) as hours FROM volunteer_hours v WHERE submitted = True AND user_id = $1',
       [req.params.id],
