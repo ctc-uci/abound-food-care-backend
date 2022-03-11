@@ -37,6 +37,43 @@ eventRouter.get('/', async (req, res) => {
   }
 });
 
+// Get All Upcoming Events Endpoint
+eventRouter.get('/upcoming', async (req, res) => {
+  try {
+    const currDate = new Date();
+    const getAllEvents = await pool.query(
+      'SELECT * FROM event WHERE start_datetime >= $1 ORDER BY start_datetime ASC;',
+      [currDate],
+    );
+    if (getAllEvents.rowCount === 0) {
+      res.status(400).json();
+    } else {
+      res.status(200).json(snakeToCamel(getAllEvents.rows));
+    }
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json(err.message);
+  }
+});
+
+// Get All Upcoming Events Endpoint
+eventRouter.get('/past', async (req, res) => {
+  try {
+    const currDate = new Date();
+    const getAllEvents = await pool.query(
+      'SELECT * FROM event WHERE start_datetime < $1 ORDER BY start_datetime ASC;',
+      [currDate],
+    );
+    if (getAllEvents.rowCount === 0) {
+      res.status(400).json();
+    } else {
+      res.status(200).json(snakeToCamel(getAllEvents.rows));
+    }
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json(err.message);
+  }
+});
 // Get Event Endpoint
 eventRouter.get('/:id', async (req, res) => {
   try {

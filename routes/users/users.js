@@ -34,7 +34,6 @@ userRouter.post('/create', async (req, res) => {
       firstName,
       lastName,
     } = req.body;
-
     const createUser = await pool.query(
       `INSERT INTO users(
         birthdate,
