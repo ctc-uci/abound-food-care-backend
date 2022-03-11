@@ -59,7 +59,7 @@ eventRouter.get('/past', async (req, res) => {
   try {
     const currDate = new Date();
     const getAllEvents = await pool.query(
-      'SELECT * FROM event WHERE start_datetime < $1 ORDER BY start_datetime ASC;',
+      'SELECT * FROM event WHERE start_datetime < $1 ORDER BY start_datetime DESC;',
       [currDate],
     );
     if (getAllEvents.rowCount === 0) {

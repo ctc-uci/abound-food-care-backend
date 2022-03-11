@@ -9,7 +9,7 @@ hoursRouter.use(express.json());
 // create unsubmitted hours
 hoursRouter.post('/create', async (req, res) => {
   try {
-    const { userId, eventId, startDatetime, endDatetime, approved, notes } = req.body;
+    const { userId, eventId, startDatetime, endDatetime, notes } = req.body;
     // calculate number of hours
     const start = new Date(startDatetime);
     const end = new Date(endDatetime);
@@ -18,7 +18,7 @@ hoursRouter.post('/create', async (req, res) => {
 
     const createdHours = await pool.query(
       'INSERT INTO volunteer_hours(user_id, event_id, start_datetime, end_datetime, approved, num_hours, notes, submitted, declined) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *;',
-      [userId, eventId, startDatetime, endDatetime, approved, numHours, notes, false, false],
+      [userId, eventId, startDatetime, endDatetime, false, numHours, notes, false, false],
     );
     if (createdHours.rows.length === 0) {
       res.status(400).json();
@@ -106,6 +106,7 @@ hoursRouter.get('/submittedUser/:id', async (req, res) => {
 // getVolunteerStatistics
 hoursRouter.get('/statistics/:id', async (req, res) => {
   try {
+    console.log(req.params.id);
     const volunteerStats = await pool.query(
       'SELECT COUNT(v.event_id) as event_count, SUM(v.num_hours) as hours FROM volunteer_hours v WHERE submitted = True AND user_id = $1',
       [req.params.id],
