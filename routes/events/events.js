@@ -54,7 +54,7 @@ eventRouter.get('/upcoming', async (req, res) => {
   }
 });
 
-// Get All Upcoming Events Endpoint
+// Get All Past Events Endpoint
 eventRouter.get('/past', async (req, res) => {
   try {
     const currDate = new Date();
