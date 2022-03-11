@@ -10,56 +10,113 @@ userRouter.use(express.json());
 userRouter.post('/create', async (req, res) => {
   try {
     const {
-      uType,
-      name,
       birthdate,
       email,
       phone,
       preferredContactMethod,
-      city,
-      physicalAddress,
       weightLiftingAbility,
       criminalHistory,
       duiHistory,
-      duiHistoryDetails,
       criminalHistoryDetails,
+      duiHistoryDetails,
       completedChowmatchTraining,
-      canDrive,
       foodRunsInterest,
       specializations,
       volunteeringRolesInterest,
       additionalInformation,
+      uType,
+      canDrive,
+      role,
+      physicalAddress,
+      city,
+      state,
+      zipcode,
+      firstName,
+      lastName,
     } = req.body;
 
     const createUser = await pool.query(
-      'INSERT INTO users(u_type, name, birthdate, email, phone, preferred_contact_method, city, physical_address, weight_lifting_ability, criminal_history, dui_history, dui_history_details, criminal_history_details, completed_chowmatch_training, can_drive, food_runs_interest, specializations, volunteering_roles_interest, additional_information) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING *;',
+      `INSERT INTO users(
+        birthdate,
+        email,
+        phone,
+        preferred_contact_method,
+        weight_lifting_ability,
+        criminal_history,
+        dui_history,
+        criminal_history_details,
+        dui_history_details,
+        completed_chowmatch_training,
+        food_runs_interest,
+        specializations,
+        volunteering_roles_interest,
+        additional_information,
+        u_type,
+        can_drive,
+        role,
+        physical_address,
+        city,
+        state,
+        zipcode,
+        first_name,
+        last_name
+      ) VALUES (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11,
+        $12,
+        $13,
+        $14,
+        $15,
+        $16,
+        $17,
+        $18,
+        $19,
+        $20,
+        $21,
+        $22,
+        $23
+      ) RETURNING *;`,
       [
-        uType,
-        name,
         birthdate,
         email,
         phone,
         preferredContactMethod,
-        city,
-        physicalAddress,
         weightLiftingAbility,
         criminalHistory,
         duiHistory,
-        duiHistoryDetails,
         criminalHistoryDetails,
+        duiHistoryDetails,
         completedChowmatchTraining,
-        canDrive,
         foodRunsInterest,
         specializations,
         volunteeringRolesInterest,
         additionalInformation,
+        uType,
+        canDrive,
+        role,
+        physicalAddress,
+        city,
+        state,
+        zipcode,
+        firstName,
+        lastName,
       ],
     );
     res.status(200).json(createUser.rows);
   } catch (err) {
-    res.status(400).send(err);
+    res.status(400).send(err.message);
   }
 });
+
 // Get user by id endpoint
 userRouter.get('/:id', async (req, res) => {
   try {
@@ -94,7 +151,7 @@ userRouter.get('/getEvents/:id', async (req, res) => {
   }
 });
 
-// get languages of volunteer by their id
+// get languages of user by their id
 userRouter.get('/getLanguages/:id', async (req, res) => {
   try {
     const getLanguages = await pool.query('SELECT language FROM language WHERE user_id = $1;', [
