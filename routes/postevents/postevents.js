@@ -51,7 +51,7 @@ posteventRouter.put('/:posteventId', async (req, res) => {
   try {
     const { description } = req.body;
     const updatePostEvents = await pool.query(
-      'UPDATE postevent SET description = $1 WHERE postevent_id = $2 RETURNING *;',
+      'UPDATE postevent SET description = $1 WHERE event_id = $2 RETURNING *;',
       [description, req.params.posteventId],
     );
     if (updatePostEvents.rows.length === 0) {
