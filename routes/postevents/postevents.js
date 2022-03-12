@@ -6,6 +6,9 @@ const posteventRouter = express();
 
 posteventRouter.use(express.json());
 
+/*
+obsolete
+
 function snakeToCamel(postevents) {
   return postevents.map((postevent) => ({
     posteventId: postevent.postevent_id,
@@ -13,6 +16,8 @@ function snakeToCamel(postevents) {
     description: postevent.description,
   }));
 }
+
+*/
 
 // Get Post Event
 posteventRouter.get('/:eventId', async (req, res) => {
@@ -35,12 +40,13 @@ posteventRouter.post('/create', async (req, res) => {
     ]);
     if (checkPostEventExists.rows.length !== 0) {
       res.status(400).send(`Postevent already exists for event_id ${eventId}`);
+    } else {
+      const createPostEvent = await pool.query(
+        'INSERT INTO postevent (event_id, description) VALUES($1, $2) RETURNING *;',
+        [eventId, description],
+      );
+      res.status(200).json(createPostEvent.rows[0]);
     }
-    const createPostEvent = await pool.query(
-      'INSERT INTO postevent (event_id, description) VALUES($1, $2) RETURNING *;',
-      [eventId, description],
-    );
-    res.status(200).json(createPostEvent.rows[0]);
   } catch (err) {
     res.status(400).json(err);
   }
@@ -57,7 +63,7 @@ posteventRouter.put('/:posteventId', async (req, res) => {
     if (updatePostEvents.rows.length === 0) {
       res.status(400).json();
     } else {
-      res.status(200).json(snakeToCamel(updatePostEvents.rows));
+      res.status(200).json();
     }
   } catch (err) {
     res.status(500).json(err);
