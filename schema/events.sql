@@ -1,62 +1,40 @@
-CREATE TABLE IF NOT EXISTS public.event
-(
-    event_id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
-    name character varying COLLATE pg_catalog."default" NOT NULL,
-    ntype character varying COLLATE pg_catalog."default",
-    location character varying COLLATE pg_catalog."default" NOT NULL,
-    start_datetime timestamp with time zone NOT NULL,
-    end_datetime timestamp with time zone NOT NULL,
-    volunteer_type character varying COLLATE pg_catalog."default",
-    volunteer_requirements text COLLATE pg_catalog."default",
-    volunteer_capacity integer NOT NULL,
-    file_attachments character varying COLLATE pg_catalog."default",
-    notes text COLLATE pg_catalog."default",
-    CONSTRAINT event_pkey PRIMARY KEY (event_id)
+DROP TYPE requirements CASCADE;
+CREATE TYPE requirements AS ENUM('drive', 'adult', 'minor', 'first aid', 'serve safe', 'transportation', 'warehouse', 'food service');
+
+DROP TABLE events CASCADE;
+CREATE TABLE events (
+  event_id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  event_type VARCHAR(255) NOT NULL,
+  address_street VARCHAR(255) NOT NULL,
+  address_zip VARCHAR(5) NOT NULL,
+  address_city VARCHAR(255) NOT NULL,
+  address_state VARCHAR(50) NOT NULL, -- split to have street, city, state, zip
+  start_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
+  end_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
+  volunteer_capacity INT NOT NULL,
+  file_attachments VARCHAR(255),
+  notes TEXT,
+  postevent_text TEXT,
 );
 
-CREATE TABLE IF NOT EXISTS public.postevent
-(
-    event_id integer,
-    postevent_id integer NOT NULL GENERATED ALWAYS AS IDENTITY ( INCREMENT 1 START 1 MINVALUE 1 MAXVALUE 2147483647 CACHE 1 ),
-    description text COLLATE pg_catalog."default",
-    CONSTRAINT postevent_pkey PRIMARY KEY (postevent_id),
-    CONSTRAINT event_id FOREIGN KEY (event_id)
-        REFERENCES public.event (event_id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-        NOT VALID
+DROP TABLE event_requirements CASCADE;
+CREATE TABLE event_requirements (
+  event_id int REFERENCES events(event_id) ON DELETE CASCADE NOT NULL,
+  requirement requirements NOT NULL,
+  UNIQUE(event_id, requirement),
 );
 
-CREATE TABLE IF NOT EXISTS public.volunteer_at_events
-(
-    user_id integer NOT NULL,
-    event_id integer NOT NULL,
-    notes character varying COLLATE pg_catalog."default",
-    CONSTRAINT event_id FOREIGN KEY (event_id)
-        REFERENCES public.event (event_id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-        NOT VALID,
-    CONSTRAINT user_id FOREIGN KEY (user_id)
-        REFERENCES public.users (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-        NOT VALID
-);
-
-CREATE TABLE IF NOT EXISTS public.volunteer_at_events
-(
-    user_id integer NOT NULL,
-    event_id integer NOT NULL,
-    notes character varying COLLATE pg_catalog."default",
-    CONSTRAINT event_id FOREIGN KEY (event_id)
-        REFERENCES public.event (event_id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-        NOT VALID,
-    CONSTRAINT user_id FOREIGN KEY (user_id)
-        REFERENCES public.users (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-        NOT VALID
+DROP TABLE volunteer_at_events CASCADE;
+CREATE TABLE volunteer_at_events (
+  user_id VARCHAR(128) REFERENCES users(user_id) ON DELETE CASCADE NOT NULL,
+  event_id INT REFERENCES events(event_id) ON DELETE CASCADE NOT NULL,
+  start_datetime timestamp with time zone,
+  end_datetime timestamp with time zone,
+  submitted BOOLEAN,
+  approved BOOLEAN,
+  declined BOOLEAN,
+  num_hours INT,
+  notes TEXT,
+  PRIMARY KEY (user_id, event_id),
 );
