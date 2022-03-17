@@ -59,5 +59,5 @@ CREATE TABLE language (
   user_id VARCHAR(128) REFERENCES user(user_id) ON DELETE CASCADE,
   language VARCHAR(255) NOT NULL,
   proficiency INT NOT NULL,
-  PRIMARY KEY (user_id, language) -- replaced unique keywords with primary key
+  PRIMARY KEY (user_id, language)
 )
