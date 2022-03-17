@@ -9,7 +9,7 @@ CREATE TABLE events (
   address_street VARCHAR(255) NOT NULL,
   address_zip VARCHAR(5) NOT NULL,
   address_city VARCHAR(255) NOT NULL,
-  address_state VARCHAR(50) NOT NULL, -- split to have street, city, state, zip
+  address_state VARCHAR(2) NOT NULL, -- changed from length 50 to 2
   start_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
   end_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
   volunteer_capacity INT NOT NULL,
@@ -22,7 +22,7 @@ DROP TABLE event_requirements CASCADE;
 CREATE TABLE event_requirements (
   event_id int REFERENCES events(event_id) ON DELETE CASCADE NOT NULL,
   requirement requirements NOT NULL,
-  UNIQUE(event_id, requirement),
+  PRIMARY KEY(event_id, requirement), -- changed from UNIQUE
 );
 
 DROP TABLE volunteer_at_events CASCADE;
