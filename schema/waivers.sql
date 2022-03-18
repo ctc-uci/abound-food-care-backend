@@ -1,14 +1,8 @@
-CREATE TABLE IF NOT EXISTS public.waiver
-(
-    waiver_id integer NOT NULL,
-    name character varying COLLATE pg_catalog."default" NOT NULL,
-    link character varying COLLATE pg_catalog."default",
-    event_id integer,
-    notes text COLLATE pg_catalog."default",
-    CONSTRAINT waiver_pkey PRIMARY KEY (waiver_id),
-    CONSTRAINT event_id FOREIGN KEY (event_id)
-        REFERENCES public.users (id) MATCH SIMPLE
-        ON UPDATE NO ACTION
-        ON DELETE NO ACTION
-        NOT VALID
+DROP TABLE waivers CASCADE;
+CREATE TABLE waivers (
+  waiver_id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  link VARCHAR(255) NOT NULL,
+  event_id INT REFERENCES events(event_id) ON DELETE SET NULL,
+  notes TEXT,
 );
