@@ -1,11 +1,12 @@
 const express = require('express');
 const cors = require('cors');
-const userRouter = require('./routes/users/users');
-const eventRouter = require('./routes/events/events');
-const hoursRouter = require('./routes/volunteer_hours/volunteer_hours');
-const posteventRouter = require('./routes/postevents/postevents');
-const volunteerRouter = require('./routes/volunteers/volunteers');
-const driverRouter = require('./routes/drivers/drivers');
+
+const userRouter = require('./routes/users');
+const eventRouter = require('./routes/events');
+const hoursRouter = require('./routes/volunteer_hours');
+const posteventRouter = require('./routes/postevents');
+const volunteerRouter = require('./routes/volunteers');
+const driverRouter = require('./routes/drivers');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -17,7 +18,7 @@ const corsOptions = {
   optionSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
-app.options('*', cors());
+app.use(express.json());
 
 // routers
 app.use('/hours', hoursRouter);
@@ -26,6 +27,8 @@ app.use('/postevents', posteventRouter);
 app.use('/events', eventRouter);
 app.use('/users', userRouter);
 app.use('/drivers', driverRouter);
-
 app.use('/users', userRouter);
-app.listen(PORT, () => {});
+
+app.listen(PORT, () => {
+  console.log(`Server listening on ${PORT}`);
+});

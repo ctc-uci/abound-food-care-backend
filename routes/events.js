@@ -1,6 +1,6 @@
 // endpoints related to events
 const express = require('express');
-const pool = require('../../db');
+const pool = require('../server/db');
 
 const eventRouter = express();
 
