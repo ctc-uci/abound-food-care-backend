@@ -12,9 +12,9 @@ CREATE TYPE days_of_week AS ENUM('Monday', 'Tuesday', 'Wednesday', 'Thursday', '
 DROP TABLE users CASCADE;
 CREATE TABLE users (
   user_id VARCHAR(128) PRIMARY KEY,
-  role roles NOT NULL,
   first_name VARCHAR(255) NOT NULL,
   last_name VARCHAR(255) NOT NULL,
+  role roles NOT NULL,
   organization VARCHAR(255) NOT NULL,
   birthdate DATE NOT NULL,
   email VARCHAR(255) NOT NULL,

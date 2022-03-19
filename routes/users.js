@@ -1,116 +1,113 @@
-// endpoints related to users
 const express = require('express');
-const pool = require('../server/db');
+const { pool, db } = require('../server/db');
+const { isNumeric, isZipCode, isPhoneNumber, isBoolean, keysToCamel } = require('./utils');
 
 const userRouter = express();
 
-userRouter.use(express.json());
-
-// create user endpoint
-userRouter.post('/create', async (req, res) => {
+// create a user
+userRouter.post('/', async (req, res) => {
   try {
     const {
-      birthdate,
+      firstName,
+      lastName,
+      role,
+      organization,
       email,
       phone,
       preferredContactMethod,
+      addressStreet,
+      addressZip,
+      addressCity,
+      addressState,
       weightLiftingAbility,
       criminalHistory,
-      duiHistory,
       criminalHistoryDetails,
+      duiHistory,
       duiHistoryDetails,
       completedChowmatchTraining,
       foodRunsInterest,
-      specializations,
-      volunteeringRolesInterest,
-      additionalInformation,
-      uType,
+      distributionInterest,
       canDrive,
-      role,
-      physicalAddress,
-      city,
-      state,
-      zipcode,
-      firstName,
-      lastName,
+      willingToDrive,
+      vehicleType,
+      distance,
+      additionalInformation,
     } = req.body;
-    const createUser = await pool.query(
-      `INSERT INTO users(
-        birthdate,
-        email,
-        phone,
-        preferred_contact_method,
-        weight_lifting_ability,
-        criminal_history,
+    isPhoneNumber(phone, 'Invalid Phone Number');
+    isZipCode(addressZip, 'Invalid Zip Code');
+    isNumeric(weightLiftingAbility, 'Weight Lifting Ability is not a Number');
+    isBoolean(criminalHistory, 'Criminal History is not a Boolean Value');
+    isBoolean(duiHistory, 'DUI History is not a Boolean Value');
+    isBoolean(completedChowmatchTraining, 'Completed Chowmatch Training is not a Boolean Value');
+    if (foodRunsInterest) {
+      isBoolean(foodRunsInterest, 'Food Runs Interest is not a Boolean Value');
+    }
+    if (distributionInterest) {
+      isBoolean(distributionInterest, 'Distribution Interest is not a Boolean Value');
+    }
+    isBoolean(canDrive, 'Can Drive is not a Boolean Value');
+    isBoolean(willingToDrive, 'Willing To Drive is not a Boolean Value');
+    if (distance) {
+      isNumeric(distance, 'Distance is not a Number');
+    }
+    const newUser = await db.query(
+      `INSERT INTO users (
+        first_name, last_name, roles, organization, birthdate, email,
+        phone, preferred_contact_method, address_street, address_zip,
+        address_city, address_state, weight_lifting_ability, criminal_history,
+        ${criminalHistoryDetails ? 'criminal_history_details, ' : ''}
         dui_history,
-        criminal_history_details,
-        dui_history_details,
+        ${duiHistoryDetails ? 'dui_history_details, ' : ''}
         completed_chowmatch_training,
-        food_runs_interest,
-        specializations,
-        volunteering_roles_interest,
-        additional_information,
-        u_type,
-        can_drive,
+        ${foodRunsInterest ? 'food_runs_interest,' : ''}
+        ${distributionInterest ? 'distribution_interest,' : ''}
+        can_drive, willing_to_drive
+        ${vehicleType ? ', vehicle_type' : ''}
+        ${distance ? ', distance' : ''}
+        ${additionalInformation ? ', additional_information' : ''})
+      VALUES (
+        $(firstName), $(lastName), $(role), $(organization), $(email), $(phone),
+        $(preferredContactMethod), $(addressStreet), $(addressZip), $(addressCity),
+        $(addressState), $(weightLiftingAbility), $(criminalHistory),
+        ${criminalHistoryDetails ? '$(criminalHistoryDetails), ' : ''}
+        $(duiHistory),
+        ${duiHistoryDetails ? '$(duiHistoryDetails), ' : ''}
+        $(completedChowmatchTraining),
+        ${foodRunsInterest ? '$(foodRunsInterest), ' : ''}
+        ${distributionInterest ? '$(distributionInterest), ' : ''}
+        $(canDrive), $(willingToDrive)
+        ${vehicleType ? ', $(vehicleType)' : ''}
+        ${distance ? ', $(distance)' : ''}
+        ${additionalInformation ? ', $(additionalInformation)' : ''})
+      RETURNING *;`,
+      {
+        firstName,
+        lastName,
         role,
-        physical_address,
-        city,
-        state,
-        zipcode,
-        first_name,
-        last_name
-      ) VALUES (
-        $1,
-        $2,
-        $3,
-        $4,
-        $5,
-        $6,
-        $7,
-        $8,
-        $9,
-        $10,
-        $11,
-        $12,
-        $13,
-        $14,
-        $15,
-        $16,
-        $17,
-        $18,
-        $19,
-        $20,
-        $21,
-        $22,
-        $23
-      ) RETURNING *;`,
-      [
-        birthdate,
+        organization,
         email,
         phone,
         preferredContactMethod,
+        addressStreet,
+        addressZip,
+        addressCity,
+        addressState,
         weightLiftingAbility,
         criminalHistory,
-        duiHistory,
         criminalHistoryDetails,
+        duiHistory,
         duiHistoryDetails,
         completedChowmatchTraining,
         foodRunsInterest,
-        specializations,
-        volunteeringRolesInterest,
-        additionalInformation,
-        uType,
+        distributionInterest,
         canDrive,
-        role,
-        physicalAddress,
-        city,
-        state,
-        zipcode,
-        firstName,
-        lastName,
-      ],
+        willingToDrive,
+        vehicleType,
+        distance,
+        additionalInformation,
+      },
     );
-    res.status(200).json(createUser.rows);
+    res.status(200).json(keysToCamel(newUser[0]));
   } catch (err) {
     res.status(400).send(err.message);
   }
