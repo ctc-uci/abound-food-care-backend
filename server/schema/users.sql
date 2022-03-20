@@ -23,7 +23,7 @@ CREATE TABLE users (
   address_street VARCHAR(255) NOT NULL,
   address_zip VARCHAR(5) NOT NULL,
   address_city VARCHAR(255) NOT NULL,
-  address_state VARCHAR(2) NOT NULL, -- changed to CHAR(2) for state code
+  address_state VARCHAR(2) NOT NULL,
   weight_lifting_ability INT NOT NULL,
   criminal_history BOOLEAN NOT NULL,
   criminal_history_details text,
@@ -36,14 +36,12 @@ CREATE TABLE users (
   willing_to_drive BOOLEAN NOT NULL,
   vehicle_type VARCHAR(255),
   distance INT,
+  first_aid_training BOOLEAN NOT NULL,
+  serve_safe_knowledge BOOLEAN NOT NULL,
+  transportation_experience BOOLEAN NOT NULL,
+  moving_warehouse_experience BOOLEAN NOT NULL,
+  food_service_industry_knowledge BOOLEAN NOT NULL,
   additional_information text,
-);
-
-DROP TABLE specialization CASCADE;
-CREATE TABLE specialization (
-  user_id VARCHAR(128) REFERENCES users(user_id) ON DELETE CASCADE NOT NULL,
-  specialization skills NOT NULL,
-  PRIMARY KEY (user_id, specialization);
 );
 
 DROP TABLE availability CASCADE;
