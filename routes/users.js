@@ -31,6 +31,11 @@ userRouter.post('/', async (req, res) => {
       willingToDrive,
       vehicleType,
       distance,
+      firstAidTraining,
+      serveSafeKnowledge,
+      transportationExperience,
+      movingWarehouseExperience,
+      foodServiceIndustryKnowledge,
       additionalInformation,
     } = req.body;
     isPhoneNumber(phone, 'Invalid Phone Number');
@@ -50,6 +55,14 @@ userRouter.post('/', async (req, res) => {
     if (distance) {
       isNumeric(distance, 'Distance is not a Number');
     }
+    isBoolean(firstAidTraining, 'First Aid Training is not a Boolean Value');
+    isBoolean(serveSafeKnowledge, 'Server Save Knowledge is not a Boolean Value');
+    isBoolean(transportationExperience, 'Transportation Experience is not a Boolean Value');
+    isBoolean(movingWarehouseExperience, 'Moving Warehouse Experience is not a Boolean Value');
+    isBoolean(
+      foodServiceIndustryKnowledge,
+      'Food Service Industry Knowledge is not a Boolean Value',
+    );
     const newUser = await db.query(
       `INSERT INTO users (
         first_name, last_name, roles, organization, birthdate, email,
@@ -61,9 +74,11 @@ userRouter.post('/', async (req, res) => {
         completed_chowmatch_training,
         ${foodRunsInterest ? 'food_runs_interest,' : ''}
         ${distributionInterest ? 'distribution_interest,' : ''}
-        can_drive, willing_to_drive
-        ${vehicleType ? ', vehicle_type' : ''}
-        ${distance ? ', distance' : ''}
+        can_drive, willing_to_drive,
+        ${vehicleType ? 'vehicle_type, ' : ''}
+        ${distance ? 'distance, ' : ''}
+        first_aid_training, serve_safe_knowledge, transportation_experience,
+        moving_warehouse_experience, food_service_industry_knowledge
         ${additionalInformation ? ', additional_information' : ''})
       VALUES (
         $(firstName), $(lastName), $(role), $(organization), $(email), $(phone),
@@ -75,9 +90,11 @@ userRouter.post('/', async (req, res) => {
         $(completedChowmatchTraining),
         ${foodRunsInterest ? '$(foodRunsInterest), ' : ''}
         ${distributionInterest ? '$(distributionInterest), ' : ''}
-        $(canDrive), $(willingToDrive)
-        ${vehicleType ? ', $(vehicleType)' : ''}
-        ${distance ? ', $(distance)' : ''}
+        $(canDrive), $(willingToDrive),
+        ${vehicleType ? '$(vehicleType), ' : ''}
+        ${distance ? '$(distance), ' : ''}
+        $(firstAidTraining), $(serveSafeKnowledge), $(transportationExperience),
+        $(movingWarehouseExperience), $(foodServiceIndustryKnowledge)
         ${additionalInformation ? ', $(additionalInformation)' : ''})
       RETURNING *;`,
       {
@@ -104,6 +121,11 @@ userRouter.post('/', async (req, res) => {
         willingToDrive,
         vehicleType,
         distance,
+        firstAidTraining,
+        serveSafeKnowledge,
+        transportationExperience,
+        movingWarehouseExperience,
+        foodServiceIndustryKnowledge,
         additionalInformation,
       },
     );
