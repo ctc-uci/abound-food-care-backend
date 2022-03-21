@@ -1,7 +1,7 @@
-DROP TYPE requirements CASCADE;
+DROP TYPE IF EXISTS requirements CASCADE;
 CREATE TYPE requirements AS ENUM('drive', 'adult', 'minor', 'first aid', 'serve safe', 'transportation', 'warehouse', 'food service');
 
-DROP TABLE events CASCADE;
+DROP TABLE IF EXISTS events CASCADE;
 CREATE TABLE events (
   event_id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -15,17 +15,17 @@ CREATE TABLE events (
   volunteer_capacity INT NOT NULL,
   file_attachments VARCHAR(255),
   notes TEXT,
-  postevent_text TEXT,
+  postevent_text TEXT
 );
 
-DROP TABLE event_requirements CASCADE;
+DROP TABLE IF EXISTS event_requirements CASCADE;
 CREATE TABLE event_requirements (
   event_id int REFERENCES events(event_id) ON DELETE CASCADE NOT NULL,
   requirement requirements NOT NULL,
-  PRIMARY KEY(event_id, requirement),
+  PRIMARY KEY(event_id, requirement)
 );
 
-DROP TABLE volunteer_at_events CASCADE;
+DROP TABLE IF EXISTS volunteer_at_events CASCADE;
 CREATE TABLE volunteer_at_events (
   user_id VARCHAR(128) REFERENCES users(user_id) ON DELETE CASCADE NOT NULL,
   event_id INT REFERENCES events(event_id) ON DELETE CASCADE NOT NULL,
@@ -36,5 +36,5 @@ CREATE TABLE volunteer_at_events (
   declined BOOLEAN,
   num_hours INT,
   notes TEXT,
-  PRIMARY KEY (user_id, event_id),
+  PRIMARY KEY (user_id, event_id)
 );
