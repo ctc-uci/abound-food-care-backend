@@ -4,14 +4,38 @@ const { isNumeric, isZipCode, isPhoneNumber, isBoolean, keysToCamel } = require(
 
 const userRouter = express();
 
+// get a user
+userRouter.get('/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    isNumeric(userId, 'User Id must be a Number');
+    const user = await pool.query(`SELECT * FROM users WHERE user_id = $1`, [userId]);
+    res.status(200).send(keysToCamel(user.rows[0]));
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
+
+// get all user
+userRouter.get('/', async (req, res) => {
+  try {
+    const users = await pool.query(`SELECT * FROM users`);
+    res.status(200).send(keysToCamel(users.rows));
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
+
 // create a user
 userRouter.post('/', async (req, res) => {
   try {
     const {
+      userId,
       firstName,
       lastName,
       role,
       organization,
+      birthdate,
       email,
       phone,
       preferredContactMethod,
@@ -65,7 +89,7 @@ userRouter.post('/', async (req, res) => {
     );
     const newUser = await db.query(
       `INSERT INTO users (
-        first_name, last_name, roles, organization, birthdate, email,
+        user_id, first_name, last_name, role, organization, birthdate, email,
         phone, preferred_contact_method, address_street, address_zip,
         address_city, address_state, weight_lifting_ability, criminal_history,
         ${criminalHistoryDetails ? 'criminal_history_details, ' : ''}
@@ -81,8 +105,8 @@ userRouter.post('/', async (req, res) => {
         moving_warehouse_experience, food_service_industry_knowledge
         ${additionalInformation ? ', additional_information' : ''})
       VALUES (
-        $(firstName), $(lastName), $(role), $(organization), $(email), $(phone),
-        $(preferredContactMethod), $(addressStreet), $(addressZip), $(addressCity),
+        $(userId), $(firstName), $(lastName), $(role), $(organization), $(birthdate), $(email),
+        $(phone), $(preferredContactMethod), $(addressStreet), $(addressZip), $(addressCity),
         $(addressState), $(weightLiftingAbility), $(criminalHistory),
         ${criminalHistoryDetails ? '$(criminalHistoryDetails), ' : ''}
         $(duiHistory),
@@ -98,10 +122,12 @@ userRouter.post('/', async (req, res) => {
         ${additionalInformation ? ', $(additionalInformation)' : ''})
       RETURNING *;`,
       {
+        userId,
         firstName,
         lastName,
         role,
         organization,
+        birthdate,
         email,
         phone,
         preferredContactMethod,
