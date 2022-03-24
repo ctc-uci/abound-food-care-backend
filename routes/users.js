@@ -8,7 +8,6 @@ const userRouter = express();
 userRouter.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    isNumeric(userId, 'User Id must be a Number');
     const user = await pool.query(`SELECT * FROM users WHERE user_id = $1`, [userId]);
     res.status(200).send(keysToCamel(user.rows[0]));
   } catch (err) {
@@ -160,6 +159,8 @@ userRouter.post('/', async (req, res) => {
     res.status(400).send(err.message);
   }
 });
+
+// update a user
 
 // Get user by id endpoint
 userRouter.get('/:id', async (req, res) => {

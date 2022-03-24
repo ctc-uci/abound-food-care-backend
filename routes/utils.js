@@ -39,8 +39,19 @@ const isArray = (a) => {
   return Array.isArray(a);
 };
 
+const isISODate = (str) => {
+  try {
+    const ISOString = str.toISOString();
+    if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(ISOString)) return false;
+    const d = new Date(ISOString);
+    return d.toISOString() === ISOString;
+  } catch (err) {
+    return false;
+  }
+};
+
 const isObject = (o) => {
-  return o === Object(o) && !isArray(o) && typeof o !== 'function';
+  return o === Object(o) && !isArray(o) && typeof o !== 'function' && !isISODate(o);
 };
 
 // Database columns are in snake case. JavaScript is suppose to be in camel case
