@@ -1,14 +1,23 @@
 const express = require('express');
 const { pool, db } = require('../server/db');
-const { isNumeric, isZipCode, isPhoneNumber, isBoolean, keysToCamel } = require('./utils');
+const { keysToCamel, validateUserInfo } = require('./utils');
 
 const userRouter = express();
+
+const getUsers = (allUsers) =>
+  `SELECT users.*, languages.languages
+  FROM users
+    LEFT JOIN
+      (SELECT l.user_id, array_agg(to_jsonb(l.*) - 'user_id') as languages
+    FROM languages as l
+    GROUP BY l.user_id) as languages on languages.user_id = users.user_id
+  ${allUsers ? '' : 'WHERE users.user_id = $1'};`;
 
 // get a user
 userRouter.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await pool.query(`SELECT * FROM users WHERE user_id = $1`, [userId]);
+    const user = await pool.query(getUsers(false), [userId]);
     res.status(200).send(keysToCamel(user.rows[0]));
   } catch (err) {
     res.status(400).send(err.message);
@@ -18,7 +27,7 @@ userRouter.get('/:userId', async (req, res) => {
 // get all user
 userRouter.get('/', async (req, res) => {
   try {
-    const users = await pool.query(`SELECT * FROM users`);
+    const users = await pool.query(getUsers(true));
     res.status(200).send(keysToCamel(users.rows));
   } catch (err) {
     res.status(400).send(err.message);
@@ -61,32 +70,25 @@ userRouter.post('/', async (req, res) => {
       foodServiceIndustryKnowledge,
       additionalInformation,
     } = req.body;
-    isPhoneNumber(phone, 'Invalid Phone Number');
-    isZipCode(addressZip, 'Invalid Zip Code');
-    isNumeric(weightLiftingAbility, 'Weight Lifting Ability is not a Number');
-    isBoolean(criminalHistory, 'Criminal History is not a Boolean Value');
-    isBoolean(duiHistory, 'DUI History is not a Boolean Value');
-    isBoolean(completedChowmatchTraining, 'Completed Chowmatch Training is not a Boolean Value');
-    if (foodRunsInterest) {
-      isBoolean(foodRunsInterest, 'Food Runs Interest is not a Boolean Value');
-    }
-    if (distributionInterest) {
-      isBoolean(distributionInterest, 'Distribution Interest is not a Boolean Value');
-    }
-    isBoolean(canDrive, 'Can Drive is not a Boolean Value');
-    isBoolean(willingToDrive, 'Willing To Drive is not a Boolean Value');
-    if (distance) {
-      isNumeric(distance, 'Distance is not a Number');
-    }
-    isBoolean(firstAidTraining, 'First Aid Training is not a Boolean Value');
-    isBoolean(serveSafeKnowledge, 'Server Save Knowledge is not a Boolean Value');
-    isBoolean(transportationExperience, 'Transportation Experience is not a Boolean Value');
-    isBoolean(movingWarehouseExperience, 'Moving Warehouse Experience is not a Boolean Value');
-    isBoolean(
+    validateUserInfo(
+      phone,
+      addressZip,
+      weightLiftingAbility,
+      criminalHistory,
+      duiHistory,
+      completedChowmatchTraining,
+      foodRunsInterest,
+      distributionInterest,
+      canDrive,
+      willingToDrive,
+      distance,
+      firstAidTraining,
+      serveSafeKnowledge,
+      transportationExperience,
+      movingWarehouseExperience,
       foodServiceIndustryKnowledge,
-      'Food Service Industry Knowledge is not a Boolean Value',
     );
-    const newUser = await db.query(
+    await db.query(
       `INSERT INTO users (
         user_id, first_name, last_name, role, organization, birthdate, email,
         phone, preferred_contact_method, address_street, address_zip,
@@ -118,8 +120,7 @@ userRouter.post('/', async (req, res) => {
         ${distance ? '$(distance), ' : ''}
         $(firstAidTraining), $(serveSafeKnowledge), $(transportationExperience),
         $(movingWarehouseExperience), $(foodServiceIndustryKnowledge)
-        ${additionalInformation ? ', $(additionalInformation)' : ''})
-      RETURNING *;`,
+        ${additionalInformation ? ', $(additionalInformation)' : ''});`,
       {
         userId,
         firstName,
@@ -154,22 +155,155 @@ userRouter.post('/', async (req, res) => {
         additionalInformation,
       },
     );
-    res.status(200).json(keysToCamel(newUser[0]));
+    const user = await pool.query(getUsers(false), [userId]);
+    res.status(200).json(keysToCamel(user.rows[0]));
   } catch (err) {
     res.status(400).send(err.message);
   }
 });
 
 // update a user
-
-// Get user by id endpoint
-userRouter.get('/:id', async (req, res) => {
+userRouter.put('/:userId', async (req, res) => {
   try {
-    const { id } = req.params;
-    const user = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
-    res.status(200).json(user.rows);
+    const { userId } = req.params;
+    const {
+      firstName,
+      lastName,
+      role,
+      organization,
+      birthdate,
+      email,
+      phone,
+      preferredContactMethod,
+      addressStreet,
+      addressZip,
+      addressCity,
+      addressState,
+      weightLiftingAbility,
+      criminalHistory,
+      criminalHistoryDetails,
+      duiHistory,
+      duiHistoryDetails,
+      completedChowmatchTraining,
+      foodRunsInterest,
+      distributionInterest,
+      canDrive,
+      willingToDrive,
+      vehicleType,
+      distance,
+      firstAidTraining,
+      serveSafeKnowledge,
+      transportationExperience,
+      movingWarehouseExperience,
+      foodServiceIndustryKnowledge,
+      additionalInformation,
+    } = req.body;
+    validateUserInfo(
+      phone,
+      addressZip,
+      weightLiftingAbility,
+      criminalHistory,
+      duiHistory,
+      completedChowmatchTraining,
+      foodRunsInterest,
+      distributionInterest,
+      canDrive,
+      willingToDrive,
+      distance,
+      firstAidTraining,
+      serveSafeKnowledge,
+      transportationExperience,
+      movingWarehouseExperience,
+      foodServiceIndustryKnowledge,
+    );
+    await db.query(
+      `UPDATE users
+      SET
+        first_name = $(first_name),
+        last_name = $(lastName),
+        role = $(role),
+        organization = $(organization),
+        birthdate = $(birthdate),
+        email = $(email),
+        phone = $(phone),
+        preferred_contact_method = $(preferredContactMethod),
+        address_street = $(addressStreet),
+        address_zip = $(addressZip),
+        address_city = $(addressCity),
+        address_state = $(addressState),
+        weight_lifting_ability = $(weightLiftingAbility),
+        criminal_history = $(criminalHistory),
+        ${criminalHistoryDetails ? 'criminal_history_details = $(criminalHistoryDetails), ' : ''}
+        dui_history = $(duiHistory),
+        ${duiHistoryDetails ? 'dui_history_details = $(duiHistoryDetails), ' : ''}
+        completed_chowmatch_training = $(completedChowmatchTraining),
+        ${foodRunsInterest ? 'food_runs_interest = $(foodRunsInterest), ' : ''}
+        ${distributionInterest ? 'distribution_interest = $(distributionInterest), ' : ''}
+        can_drive = $(canDrive),
+        willing_to_drive = $(willingToDrive),
+        ${vehicleType ? 'vehicle_type = $(vehicleType), ' : ''}
+        ${distance ? 'distance = $(distance), ' : ''}
+        first_aid_training = $(firstAidTraining),
+        serve_safe_knowledge = $(serveSafeKnowledge),
+        transportation_experience = $(transportationExperience),
+        moving_warehouse_experience = $(movingWarehouseExperience),
+        food_service_industry_knowledge = $(foodServiceIndustryKnowledge)
+        ${additionalInformation ? ', additional_information = $(additionalInformation)' : ''}
+      WHERE user_id = $(userId);`,
+      {
+        firstName,
+        lastName,
+        role,
+        organization,
+        birthdate,
+        email,
+        phone,
+        preferredContactMethod,
+        addressStreet,
+        addressZip,
+        addressCity,
+        addressState,
+        weightLiftingAbility,
+        criminalHistory,
+        criminalHistoryDetails,
+        duiHistory,
+        duiHistoryDetails,
+        completedChowmatchTraining,
+        foodRunsInterest,
+        distributionInterest,
+        canDrive,
+        willingToDrive,
+        vehicleType,
+        distance,
+        firstAidTraining,
+        serveSafeKnowledge,
+        transportationExperience,
+        movingWarehouseExperience,
+        foodServiceIndustryKnowledge,
+        additionalInformation,
+        userId,
+      },
+    );
+    const user = await pool.query(getUsers(false), [userId]);
+    res.status(200).send(keysToCamel(user.rows[0]));
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(400).send(err.message);
+  }
+});
+
+// delete a user
+userRouter.delete('/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const deletedUser = await pool.query(
+      `DELETE FROM users
+      WHERE user_id = $1
+      RETURNING *;`,
+      [userId],
+    );
+    res.status(200).send(keysToCamel(deletedUser.rows[0]));
+  } catch (err) {
+    res.status(400).send(err.message);
   }
 });
 
@@ -184,28 +318,28 @@ userRouter.get('/volunteers', async (req, res) => {
 });
 
 // get volunteer's events by id
-userRouter.get('/getEvents/:id', async (req, res) => {
-  try {
-    const getEvents = await pool.query(
-      'SELECT event_id FROM volunteer_at_events WHERE user_id = $1;',
-      [req.params.id],
-    );
-    res.status(200).json(getEvents.rows);
-  } catch (err) {
-    res.status(500).json(err.message);
-  }
-});
+// userRouter.get('/getEvents/:id', async (req, res) => {
+//   try {
+//     const getEvents = await pool.query(
+//       'SELECT event_id FROM volunteer_at_events WHERE user_id = $1;',
+//       [req.params.id],
+//     );
+//     res.status(200).json(getEvents.rows);
+//   } catch (err) {
+//     res.status(500).json(err.message);
+//   }
+// });
 
 // get languages of user by their id
-userRouter.get('/getLanguages/:id', async (req, res) => {
-  try {
-    const getLanguages = await pool.query('SELECT language FROM language WHERE user_id = $1;', [
-      req.params.id,
-    ]);
-    res.status(200).json(getLanguages.rows);
-  } catch (err) {
-    res.status(400).json(err.message);
-  }
-});
+// userRouter.get('/getLanguages/:id', async (req, res) => {
+//   try {
+//     const getLanguages = await pool.query('SELECT language FROM language WHERE user_id = $1;', [
+//       req.params.id,
+//     ]);
+//     res.status(200).json(getLanguages.rows);
+//   } catch (err) {
+//     res.status(400).json(err.message);
+//   }
+// });
 
 module.exports = userRouter;
