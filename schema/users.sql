@@ -52,8 +52,8 @@ CREATE TABLE availability (
   end_time TIME WITH TIME ZONE NOT NULL
 );
 
-DROP TABLE IF EXISTS language CASCADE;
-CREATE TABLE language (
+DROP TABLE IF EXISTS languages CASCADE;
+CREATE TABLE languages (
   user_id VARCHAR(128) REFERENCES users(user_id) ON DELETE CASCADE,
   language VARCHAR(255) NOT NULL,
   proficiency INT NOT NULL,
