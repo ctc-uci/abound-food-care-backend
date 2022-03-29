@@ -1,15 +1,15 @@
-DROP TYPE IF EXISTS contact_methods CASCADE;
-DROP TYPE IF EXISTS roles CASCADE;
-DROP TYPE IF EXISTS volunteer_roles CASCADE;
-DROP TYPE IF EXISTS skills CASCADE;
-DROP TYPE IF EXISTS days_of_week;
+DROP TYPE contact_methods CASCADE;
+DROP TYPE roles CASCADE;
+DROP TYPE volunteer_roles CASCADE;
+DROP TYPE skills CASCADE;
+DROP TYPE days_of_week;
 CREATE TYPE contact_methods AS ENUM('email', 'phone');
 CREATE TYPE roles AS ENUM('volunteer', 'admin');
 CREATE TYPE volunteer_roles as ENUM('food runner', 'distribution worker');
 CREATE TYPE skills AS ENUM('first aid', 'serve safe', 'transportation', 'warehouse', 'food service');
 CREATE TYPE days_of_week AS ENUM('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday');
 
-DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE users CASCADE;
 CREATE TABLE users (
   user_id VARCHAR(128) PRIMARY KEY,
   first_name VARCHAR(255) NOT NULL,
@@ -41,21 +41,14 @@ CREATE TABLE users (
   transportation_experience BOOLEAN NOT NULL,
   moving_warehouse_experience BOOLEAN NOT NULL,
   food_service_industry_knowledge BOOLEAN NOT NULL,
-  additional_information text
+  languages VARCHAR(255)[],
+  additional_information text,
 );
 
-DROP TABLE IF EXISTS availability CASCADE;
+DROP TABLE availability CASCADE;
 CREATE TABLE availability (
   user_id VARCHAR(128) REFERENCES users(user_id) ON DELETE CASCADE,
   day_of_week days_of_week NOT NULL,
   start_time TIME WITH TIME ZONE NOT NULL,
-  end_time TIME WITH TIME ZONE NOT NULL
-);
-
-DROP TABLE IF EXISTS languages CASCADE;
-CREATE TABLE languages (
-  user_id VARCHAR(128) REFERENCES users(user_id) ON DELETE CASCADE,
-  language VARCHAR(255) NOT NULL,
-  proficiency INT NOT NULL,
-  PRIMARY KEY (user_id, language)
+  end_time TIME WITH TIME ZONE NOT NULL,
 );
