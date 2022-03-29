@@ -4,15 +4,11 @@ const { keysToCamel, validateUserInfo } = require('./utils');
 
 const userRouter = express();
 
-const getUsers = (allUsers) =>
-  `SELECT * FROM users
-  ${allUsers ? '' : 'WHERE users.user_id = $1'};`;
-
 // get a user
 userRouter.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await pool.query(getUsers(false), [userId]);
+    const user = await pool.query(`SELECT * FROM users WHERE user_id = $1`, [userId]);
     res.status(200).send(keysToCamel(user.rows[0]));
   } catch (err) {
     res.status(400).send(err.message);
@@ -22,7 +18,7 @@ userRouter.get('/:userId', async (req, res) => {
 // get all user
 userRouter.get('/', async (req, res) => {
   try {
-    const users = await pool.query(getUsers(true));
+    const users = await pool.query(`SELECT * FROM users`);
     res.status(200).send(keysToCamel(users.rows));
   } catch (err) {
     res.status(400).send(err.message);
@@ -86,7 +82,7 @@ userRouter.post('/', async (req, res) => {
     );
     // sort languages so will always be in alphabetical order when retrieved
     languages.sort();
-    await db.query(
+    const user = await db.query(
       `INSERT INTO users (
         user_id, first_name, last_name, role, organization, birthdate, email,
         phone, preferred_contact_method, address_street, address_zip,
@@ -118,7 +114,8 @@ userRouter.post('/', async (req, res) => {
         ${distance ? '$(distance), ' : ''}
         $(firstAidTraining), $(serveSafeKnowledge), $(transportationExperience),
         $(movingWarehouseExperience), $(foodServiceIndustryKnowledge), $(languages)
-        ${additionalInformation ? ', $(additionalInformation)' : ''});`,
+        ${additionalInformation ? ', $(additionalInformation)' : ''})
+      RETURNING *;`,
       {
         userId,
         firstName,
@@ -154,8 +151,7 @@ userRouter.post('/', async (req, res) => {
         additionalInformation,
       },
     );
-    const user = await pool.query(getUsers(false), [userId]);
-    res.status(200).json(keysToCamel(user.rows[0]));
+    res.status(200).json(keysToCamel(user[0]));
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -218,7 +214,7 @@ userRouter.put('/:userId', async (req, res) => {
     );
     // sort languages so will always be in alphabetical order when retrieved
     languages.sort();
-    await db.query(
+    const user = await db.query(
       `UPDATE users
       SET
         first_name = $(firstName),
@@ -252,7 +248,8 @@ userRouter.put('/:userId', async (req, res) => {
         food_service_industry_knowledge = $(foodServiceIndustryKnowledge),
         languages = $(languages)
         ${additionalInformation ? ', additional_information = $(additionalInformation)' : ''}
-      WHERE user_id = $(userId);`,
+      WHERE user_id = $(userId)
+      RETURNING *;`,
       {
         firstName,
         lastName,
@@ -288,8 +285,7 @@ userRouter.put('/:userId', async (req, res) => {
         userId,
       },
     );
-    const user = await pool.query(getUsers(false), [userId]);
-    res.status(200).send(keysToCamel(user.rows[0]));
+    res.status(200).send(keysToCamel(user[0]));
   } catch (err) {
     res.status(400).send(err.message);
   }
