@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 
 const userRouter = require('./routes/users');
-const languageRouter = require('./routes/languages');
 const eventRouter = require('./routes/events');
 const hoursRouter = require('./routes/volunteer_hours');
 const posteventRouter = require('./routes/postevents');
@@ -28,7 +27,6 @@ app.use('/volunteers', volunteerRouter);
 app.use('/postevents', posteventRouter);
 app.use('/events', eventRouter);
 app.use('/users', userRouter);
-app.use('/users/languages', languageRouter);
 app.use('/drivers', driverRouter);
 
 app.listen(PORT, () => {

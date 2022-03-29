@@ -5,12 +5,7 @@ const { keysToCamel, validateUserInfo } = require('./utils');
 const userRouter = express();
 
 const getUsers = (allUsers) =>
-  `SELECT users.*, languages.languages
-  FROM users
-    LEFT JOIN
-      (SELECT l.user_id, array_agg(to_jsonb(l.*) - 'user_id') as languages
-    FROM languages as l
-    GROUP BY l.user_id) as languages on languages.user_id = users.user_id
+  `SELECT * FROM users
   ${allUsers ? '' : 'WHERE users.user_id = $1'};`;
 
 // get a user
@@ -68,6 +63,7 @@ userRouter.post('/', async (req, res) => {
       transportationExperience,
       movingWarehouseExperience,
       foodServiceIndustryKnowledge,
+      languages,
       additionalInformation,
     } = req.body;
     validateUserInfo(
@@ -88,6 +84,8 @@ userRouter.post('/', async (req, res) => {
       movingWarehouseExperience,
       foodServiceIndustryKnowledge,
     );
+    // sort languages so will always be in alphabetical order when retrieved
+    languages.sort();
     await db.query(
       `INSERT INTO users (
         user_id, first_name, last_name, role, organization, birthdate, email,
@@ -103,7 +101,7 @@ userRouter.post('/', async (req, res) => {
         ${vehicleType ? 'vehicle_type, ' : ''}
         ${distance ? 'distance, ' : ''}
         first_aid_training, serve_safe_knowledge, transportation_experience,
-        moving_warehouse_experience, food_service_industry_knowledge
+        moving_warehouse_experience, food_service_industry_knowledge, languages
         ${additionalInformation ? ', additional_information' : ''})
       VALUES (
         $(userId), $(firstName), $(lastName), $(role), $(organization), $(birthdate), $(email),
@@ -119,7 +117,7 @@ userRouter.post('/', async (req, res) => {
         ${vehicleType ? '$(vehicleType), ' : ''}
         ${distance ? '$(distance), ' : ''}
         $(firstAidTraining), $(serveSafeKnowledge), $(transportationExperience),
-        $(movingWarehouseExperience), $(foodServiceIndustryKnowledge)
+        $(movingWarehouseExperience), $(foodServiceIndustryKnowledge), $(languages)
         ${additionalInformation ? ', $(additionalInformation)' : ''});`,
       {
         userId,
@@ -152,6 +150,7 @@ userRouter.post('/', async (req, res) => {
         transportationExperience,
         movingWarehouseExperience,
         foodServiceIndustryKnowledge,
+        languages,
         additionalInformation,
       },
     );
@@ -196,6 +195,7 @@ userRouter.put('/:userId', async (req, res) => {
       transportationExperience,
       movingWarehouseExperience,
       foodServiceIndustryKnowledge,
+      languages,
       additionalInformation,
     } = req.body;
     validateUserInfo(
@@ -216,10 +216,12 @@ userRouter.put('/:userId', async (req, res) => {
       movingWarehouseExperience,
       foodServiceIndustryKnowledge,
     );
+    // sort languages so will always be in alphabetical order when retrieved
+    languages.sort();
     await db.query(
       `UPDATE users
       SET
-        first_name = $(first_name),
+        first_name = $(firstName),
         last_name = $(lastName),
         role = $(role),
         organization = $(organization),
@@ -247,7 +249,8 @@ userRouter.put('/:userId', async (req, res) => {
         serve_safe_knowledge = $(serveSafeKnowledge),
         transportation_experience = $(transportationExperience),
         moving_warehouse_experience = $(movingWarehouseExperience),
-        food_service_industry_knowledge = $(foodServiceIndustryKnowledge)
+        food_service_industry_knowledge = $(foodServiceIndustryKnowledge),
+        languages = $(languages)
         ${additionalInformation ? ', additional_information = $(additionalInformation)' : ''}
       WHERE user_id = $(userId);`,
       {
@@ -280,6 +283,7 @@ userRouter.put('/:userId', async (req, res) => {
         transportationExperience,
         movingWarehouseExperience,
         foodServiceIndustryKnowledge,
+        languages,
         additionalInformation,
         userId,
       },
@@ -308,14 +312,14 @@ userRouter.delete('/:userId', async (req, res) => {
 });
 
 // Get volunteers endpoint
-userRouter.get('/volunteers', async (req, res) => {
-  try {
-    const getVolunteers = await pool.query(`SELECT * FROM users WHERE u_type = 'volunteer';`);
-    res.status(200).json(getVolunteers.rows);
-  } catch (err) {
-    res.status(500).json(err.message);
-  }
-});
+// userRouter.get('/volunteers', async (req, res) => {
+//   try {
+//     const getVolunteers = await pool.query(`SELECT * FROM users WHERE u_type = 'volunteer';`);
+//     res.status(200).json(getVolunteers.rows);
+//   } catch (err) {
+//     res.status(500).json(err.message);
+//   }
+// });
 
 // get volunteer's events by id
 // userRouter.get('/getEvents/:id', async (req, res) => {

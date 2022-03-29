@@ -41,6 +41,7 @@ CREATE TABLE users (
   transportation_experience BOOLEAN NOT NULL,
   moving_warehouse_experience BOOLEAN NOT NULL,
   food_service_industry_knowledge BOOLEAN NOT NULL,
+  languages VARCHAR(255)[],
   additional_information text,
 );
 
@@ -51,11 +52,3 @@ CREATE TABLE availability (
   start_time TIME WITH TIME ZONE NOT NULL,
   end_time TIME WITH TIME ZONE NOT NULL,
 );
-
-DROP TABLE languages CASCADE;
-CREATE TABLE languages (
-  user_id VARCHAR(128) REFERENCES user(user_id) ON DELETE CASCADE,
-  language VARCHAR(255) NOT NULL,
-  proficiency INT NOT NULL,
-  PRIMARY KEY (user_id, language)
-)
