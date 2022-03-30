@@ -15,7 +15,7 @@ userRouter.get('/:userId', async (req, res) => {
   }
 });
 
-// get all user
+// get all users
 userRouter.get('/', async (req, res) => {
   try {
     const users = await pool.query(`SELECT * FROM users`);

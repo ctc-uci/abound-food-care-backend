@@ -6,7 +6,7 @@ const eventRouter = require('./routes/events');
 const hoursRouter = require('./routes/volunteer_hours');
 const posteventRouter = require('./routes/postevents');
 const volunteerRouter = require('./routes/volunteers');
-// const availabilityRouter = require('./routes/availability');
+const availabilityRouter = require('./routes/availability');
 const driverRouter = require('./routes/drivers');
 
 const app = express();
@@ -27,6 +27,7 @@ app.use('/volunteers', volunteerRouter);
 app.use('/postevents', posteventRouter);
 app.use('/events', eventRouter);
 app.use('/users', userRouter);
+app.use('/availability', availabilityRouter);
 app.use('/drivers', driverRouter);
 
 app.listen(PORT, () => {
