@@ -1,3 +1,5 @@
+const pool = require('../db');
+
 const isNumeric = (value, errorMessage) => {
   if (!/^\d+$/.test(value)) {
     throw new Error(errorMessage);
@@ -72,6 +74,42 @@ const keysToCamel = (data) => {
   return data;
 };
 
+const dropNotifications = () => {
+  try {
+    pool.query("DELETE * FROM notifications WHERE timestamp < CURRENT_DATE - interval '1 week'");
+  } catch (e) {
+    console.error('error deleting notifications from table');
+  }
+};
+
+const addNotification = (notificationName, description) => {
+  try {
+    dropNotifications();
+    const timestamp = Date.now();
+    const existingNotif = pool.query(
+      'SELECT * FROM notification WHERE eventName = $1',
+      notificationName,
+    );
+    if (existingNotif.rows) {
+      // update timestamp + description
+      const updatedNotif = pool.query(
+        'UPDATE notification SET name = $1, description = $2, timestamp = $3 WHERE name = $4',
+        [notificationName, description, timestamp, notificationName],
+      );
+      return updatedNotif.rows[0];
+    }
+    // add new notif
+    const newNotif = pool.query(
+      'INSERT INTO notification(name, description, timestamp) VALUES ($1, $2, $3)',
+      [notificationName, description, timestamp],
+    );
+    return newNotif.rows[0];
+  } catch (e) {
+    console.error('error adding notification to table');
+    return null;
+  }
+};
+
 module.exports = {
   isNumeric,
   isBoolean,
@@ -79,4 +117,5 @@ module.exports = {
   isAlphaNumeric,
   isPhoneNumber,
   keysToCamel,
+  addNotification,
 };

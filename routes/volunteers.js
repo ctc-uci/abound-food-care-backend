@@ -1,6 +1,7 @@
 // endpoints related to volunteer hours
 const express = require('express');
 const pool = require('../server/db');
+const { addNotification } = require('./utils');
 
 const volunteerRouter = express();
 
@@ -67,6 +68,18 @@ volunteerRouter.post('/event/join', async (req, res) => {
     const createVolunteerAtEvent = await pool.query(
       'INSERT INTO volunteer_at_events (user_id, event_id, notes) VALUES($1, $2, $3) RETURNING *',
       [userId, eventId, notes],
+    );
+    const currentVolunteer = await pool.query('SELECT name FROM volunteers WHERE user_id = $1');
+    const currentEvent = await pool.query('SELECT name FROM events WHERE event_id = $1', eventId);
+    const volunteerCount = await pool.query(
+      'SELECT COUNT(*) from volunteer_at_events WHERE event_id = $1',
+      eventId,
+    );
+    addNotification(
+      `event_${eventId}_join`,
+      `${currentVolunteer.rows[0]} and ${volunteerCount.rows[0] - 1} have signed up for ${
+        currentEvent.rows[0]
+      }`,
     );
     res.status(200).json(createVolunteerAtEvent.rows[0]);
   } catch (err) {
