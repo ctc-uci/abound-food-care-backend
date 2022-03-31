@@ -1,12 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 
-const userRouter = require('./routes/users');
+const userRouter = require('./routes/users/users');
 const eventRouter = require('./routes/events');
 const hoursRouter = require('./routes/volunteer_hours');
 const posteventRouter = require('./routes/postevents');
 const volunteerRouter = require('./routes/volunteers');
-const availabilityRouter = require('./routes/availability');
+const availabilityRouter = require('./routes/users/availability');
 const driverRouter = require('./routes/drivers');
 
 const app = express();

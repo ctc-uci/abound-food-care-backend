@@ -1,14 +1,25 @@
 const express = require('express');
-const { pool, db } = require('../server/db');
-const { keysToCamel, validateUserInfo } = require('./utils');
+const { pool, db } = require('../../server/db');
+const { keysToCamel, validateUserInfo } = require('../utils');
+const updateAvailabilities = require('./availabilityUtils');
 
 const userRouter = express();
+
+const getUsersQuery = (conditions = '') =>
+  `SELECT users.*, availability.availabilities
+  FROM users
+    LEFT JOIN
+      (SELECT user_id, array_agg(to_jsonb(availability.*) - 'user_id' ORDER BY availability.day_of_week) AS availabilities
+        FROM availability
+        GROUP BY user_id) AS availability on availability.user_id = users.user_id
+  ${conditions}`;
 
 // get a user
 userRouter.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const user = await pool.query(`SELECT * FROM users WHERE user_id = $1`, [userId]);
+    const conditions = 'WHERE users.user_id = $1';
+    const user = await pool.query(getUsersQuery(conditions), [userId]);
     res.status(200).send(keysToCamel(user.rows[0]));
   } catch (err) {
     res.status(400).send(err.message);
@@ -18,7 +29,7 @@ userRouter.get('/:userId', async (req, res) => {
 // get all users
 userRouter.get('/', async (req, res) => {
   try {
-    const users = await pool.query(`SELECT * FROM users`);
+    const users = await pool.query(getUsersQuery());
     res.status(200).send(keysToCamel(users.rows));
   } catch (err) {
     res.status(400).send(err.message);
@@ -61,6 +72,7 @@ userRouter.post('/', async (req, res) => {
       foodServiceIndustryKnowledge,
       languages,
       additionalInformation,
+      availabilities,
     } = req.body;
     validateUserInfo(
       phone,
@@ -82,7 +94,7 @@ userRouter.post('/', async (req, res) => {
     );
     // sort languages so will always be in alphabetical order when retrieved
     languages.sort();
-    const user = await db.query(
+    await db.query(
       `INSERT INTO users (
         user_id, first_name, last_name, role, organization, birthdate, email,
         phone, preferred_contact_method, address_street, address_zip,
@@ -114,8 +126,7 @@ userRouter.post('/', async (req, res) => {
         ${distance ? '$(distance), ' : ''}
         $(firstAidTraining), $(serveSafeKnowledge), $(transportationExperience),
         $(movingWarehouseExperience), $(foodServiceIndustryKnowledge), $(languages)
-        ${additionalInformation ? ', $(additionalInformation)' : ''})
-      RETURNING *;`,
+        ${additionalInformation ? ', $(additionalInformation)' : ''})`,
       {
         userId,
         firstName,
@@ -151,7 +162,8 @@ userRouter.post('/', async (req, res) => {
         additionalInformation,
       },
     );
-    res.status(200).json(keysToCamel(user[0]));
+    const userInfo = await updateAvailabilities(availabilities, userId, getUsersQuery);
+    res.status(200).json(keysToCamel(userInfo));
   } catch (err) {
     res.status(400).send(err.message);
   }
