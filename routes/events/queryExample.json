@@ -1,0 +1,16 @@
+// add an event
+{
+  "name": "ros",
+  "eventType": "volunteer",
+  "addressStreet": "asfzxv",
+  "addressZip": "12345",
+  "addressCity": "azxcv",
+  "addressState": "as",
+  "startDatetime": "2012-08-24 15:00:00 +02:00",
+  "endDatetime": "2012-08-24 16:00:00 +02:00",
+  "volunteerCapacity": "10",
+  "requirements": [
+      "drive"
+  ]
+}
+

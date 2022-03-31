@@ -1,18 +1,10 @@
 const express = require('express');
 const { pool, db } = require('../../server/db');
-const { keysToCamel, validateUserInfo } = require('../utils');
+const { keysToCamel, getUsersQuery } = require('../utils');
+const validateUserInfo = require('./usersUtils');
 const updateAvailabilities = require('./availabilityUtils');
 
 const userRouter = express();
-
-const getUsersQuery = (conditions = '') =>
-  `SELECT users.*, availability.availabilities
-  FROM users
-    LEFT JOIN
-      (SELECT user_id, array_agg(to_jsonb(availability.*) - 'user_id' ORDER BY availability.day_of_week) AS availabilities
-        FROM availability
-        GROUP BY user_id) AS availability on availability.user_id = users.user_id
-  ${conditions}`;
 
 // get a user
 userRouter.get('/:userId', async (req, res) => {

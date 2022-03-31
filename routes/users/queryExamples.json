@@ -45,3 +45,19 @@
       }
   ]
 }
+
+// updating availability
+{
+  "availabilities": [
+      {
+          "dayOfWeek": "Monday",
+          "startTime": "1970-01-01 08:00:00 America/Los_Angeles",
+          "endTime": "1970-01-01 08:00:00 America/Los_Angeles"
+      },
+      {
+          "dayOfWeek": "Tuesday",
+          "startTime": "1970-01-01 08:00:00 America/Los_Angeles",
+          "endTime": "1970-01-01 08:00:00 America/Los_Angeles"
+      }
+  ]
+}
