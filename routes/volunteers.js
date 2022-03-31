@@ -79,7 +79,7 @@ volunteerRouter.get('/events/:eventId', async (req, res) => {
       GROUP BY event_id`,
       [eventId],
     );
-    res.status(200).json(keysToCamel(volunteers.rows));
+    res.status(200).json(keysToCamel(volunteers.rows[0]));
   } catch (err) {
     res.status(400).json(err.message);
   }
