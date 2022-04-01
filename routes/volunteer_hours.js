@@ -1,6 +1,6 @@
 // endpoints related to volunteer hours
 const express = require('express');
-const pool = require('../server/db');
+const { pool, db } = require('../server/db');
 
 const hoursRouter = express();
 
@@ -16,9 +16,26 @@ hoursRouter.post('/create', async (req, res) => {
     const diff = end.getTime() - start.getTime();
     const numHours = parseInt(diff / (60000 * 60), 10);
 
-    const createdHours = await pool.query(
-      'INSERT INTO volunteer_hours(user_id, event_id, start_datetime, end_datetime, approved, num_hours, notes, submitted, declined) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *;',
-      [userId, eventId, startDatetime, endDatetime, false, numHours, notes, false, false],
+    const createdHours = await db.query(
+      `INSERT INTO volunteer_hours (
+          user_id, event_id, start_datetime,
+          end_datetime, approved, num_hours,
+          notes, submitted, declined)
+        VALUES (
+          $(userId), $(eventId), $(startDatetime),
+          $(endDatetime), false, $(numHours),
+          $(notes), false, false
+        )
+        RETURNING *;
+      `,
+      {
+        userId,
+        eventId,
+        startDatetime,
+        endDatetime,
+        numHours,
+        notes,
+      },
     );
     if (createdHours.rows.length === 0) {
       res.status(400).json();
@@ -39,9 +56,23 @@ hoursRouter.put('/submit', async (req, res) => {
     const diff = end.getTime() - start.getTime();
     const numHours = parseInt(diff / (60000 * 60), 10);
 
-    const createdHours = await pool.query(
-      'UPDATE volunteer_hours SET start_datetime = $3, end_datetime = $4, approved = $5, num_hours = $6, notes = $7, submitted = $8 WHERE user_id = $1 AND event_id = $2 RETURNING *;',
-      [userId, eventId, startDatetime, endDatetime, approved, numHours, notes, true],
+    const createdHours = await db.query(
+      `UPDATE volunteer_hours
+        SET start_datetime = $(startDatetime), end_datetime = $(endDatetime),
+          approved = $(approved), num_hours = $(numHours),
+          notes = $(notes), submitted = true
+        WHERE user_id = $(userId) AND event_id = $(eventId)
+        RETURNING *;
+      `,
+      {
+        userId,
+        eventId,
+        startDatetime,
+        endDatetime,
+        approved,
+        numHours,
+        notes,
+      },
     );
     if (createdHours.rows.length === 0) {
       res.status(400).json();
