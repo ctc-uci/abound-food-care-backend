@@ -72,6 +72,15 @@ const keysToCamel = (data) => {
   return data;
 };
 
+const getUsersQuery = (conditions = '') =>
+  `SELECT users.*, availability.availabilities
+  FROM users
+    LEFT JOIN
+      (SELECT user_id, array_agg(to_jsonb(availability.*) - 'user_id' ORDER BY availability.day_of_week) AS availabilities
+        FROM availability
+        GROUP BY user_id) AS availability on availability.user_id = users.user_id
+  ${conditions}`;
+
 module.exports = {
   isNumeric,
   isBoolean,
@@ -79,4 +88,5 @@ module.exports = {
   isAlphaNumeric,
   isPhoneNumber,
   keysToCamel,
+  getUsersQuery,
 };
