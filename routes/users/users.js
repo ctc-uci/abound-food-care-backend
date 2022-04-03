@@ -4,6 +4,10 @@ const pool = require('../../db');
 
 const userRouter = express();
 
+// use this admin object in the future when you want to delete a user by id
+// const admin = require('../firebase');
+// ex: await admin.auth().deleteUser(userId);
+
 userRouter.use(express.json());
 
 // create user endpoint
