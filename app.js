@@ -3,8 +3,8 @@ const cors = require('cors');
 
 const userRouter = require('./routes/users/users');
 const eventRouter = require('./routes/events/events');
-const volunteerHoursRouter = require('./routes/volunteer_hours');
-const volunteerRouter = require('./routes/volunteers');
+const volunteerHoursRouter = require('./routes/volunteers/volunteer_hours');
+const volunteerRouter = require('./routes/volunteers/volunteers');
 const availabilityRouter = require('./routes/users/availability');
 
 const app = express();

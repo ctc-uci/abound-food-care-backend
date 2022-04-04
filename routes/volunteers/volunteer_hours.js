@@ -1,6 +1,6 @@
 const express = require('express');
-const { pool, db } = require('../server/db');
-const { keysToCamel, isNumeric, isBoolean } = require('./utils');
+const { pool, db } = require('../../server/db');
+const { keysToCamel, isNumeric, isBoolean } = require('../utils');
 
 const volunteerHoursRouter = express();
 
