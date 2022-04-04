@@ -3,8 +3,7 @@ const cors = require('cors');
 
 const userRouter = require('./routes/users/users');
 const eventRouter = require('./routes/events/events');
-const hoursRouter = require('./routes/volunteer_hours');
-const posteventRouter = require('./routes/postevents');
+const volunteerHoursRouter = require('./routes/volunteer_hours');
 const volunteerRouter = require('./routes/volunteers');
 const availabilityRouter = require('./routes/users/availability');
 
@@ -21,9 +20,8 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 // routers
-app.use('/hours', hoursRouter);
 app.use('/volunteers', volunteerRouter);
-app.use('/postevents', posteventRouter);
+app.use('/hours', volunteerHoursRouter);
 app.use('/events', eventRouter);
 app.use('/users', userRouter);
 app.use('/availability', availabilityRouter);

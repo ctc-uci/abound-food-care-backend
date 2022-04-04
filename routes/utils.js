@@ -5,7 +5,7 @@ const isNumeric = (value, errorMessage) => {
 };
 
 const isBoolean = (value, errorMessage) => {
-  if (value !== 'true' && value !== 'false') {
+  if (![true, false, 'true', 'false'].includes(value)) {
     throw new Error(errorMessage);
   }
 };

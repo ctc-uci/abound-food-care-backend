@@ -1,13 +1,89 @@
-// endpoints related to volunteer hours
 const express = require('express');
-const pool = require('../server/db');
+const { pool, db } = require('../server/db');
+const { keysToCamel, isNumeric, isBoolean } = require('./utils');
 
-const hoursRouter = express();
+const volunteerHoursRouter = express();
 
-hoursRouter.use(express.json());
+// get all submitted hours
+volunteerHoursRouter.get('/', async (req, res) => {
+  try {
+    const submittedHours = await pool.query(
+      `SELECT *
+      FROM volunteer_at_events
+      WHERE volunteer_at_events.submitted = True;`,
+    );
+    res.status(200).json(keysToCamel(submittedHours.rows));
+  } catch (err) {
+    res.status(400).json(err.message);
+  }
+});
+
+// get all hours for a volunteer
+volunteerHoursRouter.get('/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const submittedHours = await pool.query(
+      `SELECT *
+      FROM volunteer_at_events
+      WHERE volunteer_at_events.user_id = $1;`,
+      [userId],
+    );
+    res.status(200).json(keysToCamel(submittedHours.rows));
+  } catch (err) {
+    res.status(400).json(err.message);
+  }
+});
+
+// create unsubmitted hours for a volunteer
+// need to decide whether num_hours is calculated on the frontend or backend
+volunteerHoursRouter.post('/:userId/:eventId', async (req, res) => {
+  try {
+    const { userId, eventId } = req.params;
+    isNumeric(eventId, 'Event Id must be a number');
+    const { startDatetime, endDatetime, submitted, approved, declined, notes } = req.body;
+    isBoolean(submitted, 'Submitted must be a boolean value');
+    isBoolean(approved, 'Approved must be a boolean value');
+    isBoolean(declined, 'Declined must be a boolean value');
+
+    const start = new Date(startDatetime);
+    const end = new Date(endDatetime);
+    const diff = end.getTime() - start.getTime();
+    const numHours = parseInt(diff / (60000 * 60), 10);
+
+    const unsubmittedHours = await db.query(
+      `UPDATE volunteer_at_events
+      SET
+        start_datetime = $(startDatetime),
+        end_datetime = $(endDatetime),
+        submitted = $(submitted),
+        approved = $(approved),
+        declined = $(declined),
+        num_hours = $(numHours)
+        ${notes ? ', notes = $(notes)' : ''}
+      WHERE user_id = $(userId) AND event_id = $(eventId)
+      RETURNING *;`,
+      {
+        startDatetime,
+        endDatetime,
+        submitted,
+        approved,
+        declined,
+        numHours,
+        notes,
+        userId,
+        eventId,
+      },
+    );
+    res.status(200).json(keysToCamel(unsubmittedHours[0]));
+  } catch (err) {
+    res.status(400).json(err.message);
+  }
+});
+
+// submit hours for a volunteer
 
 // create unsubmitted hours
-hoursRouter.post('/create', async (req, res) => {
+volunteerHoursRouter.post('/create', async (req, res) => {
   try {
     const { userId, eventId, startDatetime, endDatetime, notes } = req.body;
     // calculate number of hours
@@ -31,7 +107,7 @@ hoursRouter.post('/create', async (req, res) => {
 });
 
 // submitHours
-hoursRouter.put('/submit', async (req, res) => {
+volunteerHoursRouter.put('/submit', async (req, res) => {
   try {
     const { userId, eventId, startDatetime, endDatetime, approved, notes } = req.body;
     const start = new Date(startDatetime);
@@ -54,7 +130,7 @@ hoursRouter.put('/submit', async (req, res) => {
 });
 
 // getUnsubmittedHours
-hoursRouter.get('/unsubmitted', async (req, res) => {
+volunteerHoursRouter.get('/unsubmitted', async (req, res) => {
   try {
     const unsubmittedHours = await pool.query(
       'SELECT * FROM volunteer_hours WHERE submitted = False;',
@@ -66,7 +142,7 @@ hoursRouter.get('/unsubmitted', async (req, res) => {
 });
 
 // getSubmittedHours
-hoursRouter.get('/submitted', async (req, res) => {
+volunteerHoursRouter.get('/submitted', async (req, res) => {
   try {
     const submittedHours = await pool.query(
       'SELECT * FROM volunteer_hours WHERE submitted = True;',
@@ -78,7 +154,7 @@ hoursRouter.get('/submitted', async (req, res) => {
 });
 
 // getUnsubmittedHoursByUserId
-hoursRouter.get('/unsubmittedUser/:id', async (req, res) => {
+volunteerHoursRouter.get('/unsubmittedUser/:id', async (req, res) => {
   try {
     const unsubmittedHours = await pool.query(
       'SELECT v.start_datetime, v.end_datetime, v.num_hours, v.notes, e.name, e.event_id, v.start_datetime AS date FROM volunteer_hours v, event e WHERE v.event_id = e.event_id AND submitted = False AND user_id = $1 ORDER BY v.start_datetime',
@@ -91,7 +167,7 @@ hoursRouter.get('/unsubmittedUser/:id', async (req, res) => {
 });
 
 // getSubmittedHoursByUserId
-hoursRouter.get('/submittedUser/:id', async (req, res) => {
+volunteerHoursRouter.get('/submittedUser/:id', async (req, res) => {
   try {
     const submittedHours = await pool.query(
       'SELECT v.approved, v.start_datetime, v.end_datetime, v.num_hours, v.notes, e.name, v.start_datetime AS date FROM volunteer_hours v, event e WHERE v.event_id = e.event_id AND submitted = True AND user_id = $1 ORDER BY v.start_datetime',
@@ -104,7 +180,7 @@ hoursRouter.get('/submittedUser/:id', async (req, res) => {
 });
 
 // getVolunteerStatistics
-hoursRouter.get('/statistics/:id', async (req, res) => {
+volunteerHoursRouter.get('/statistics/:id', async (req, res) => {
   try {
     const volunteerStats = await pool.query(
       'SELECT COUNT(v.event_id) as event_count, SUM(v.num_hours) as hours FROM volunteer_hours v WHERE submitted = True AND user_id = $1',
@@ -116,7 +192,7 @@ hoursRouter.get('/statistics/:id', async (req, res) => {
   }
 });
 
-hoursRouter.get('/unapproved', async (req, res) => {
+volunteerHoursRouter.get('/unapproved', async (req, res) => {
   try {
     const unapprovedHours = await pool.query(
       'SELECT * FROM volunteer_hours WHERE approved = False AND submitted = True;',
@@ -127,4 +203,4 @@ hoursRouter.get('/unapproved', async (req, res) => {
   }
 });
 
-module.exports = hoursRouter;
+module.exports = volunteerHoursRouter;
