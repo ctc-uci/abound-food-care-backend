@@ -4,14 +4,25 @@ const { keysToCamel, isNumeric, isBoolean } = require('./utils');
 
 const volunteerHoursRouter = express();
 
+const getVolunteerHoursQuery = (conditions = '') =>
+  `SELECT volunteer_at_events.*, to_jsonb(events.*) - 'event_id' as event
+  FROM volunteer_at_events
+    INNER JOIN
+      (SELECT events.*, r.requirements
+      FROM events
+        LEFT JOIN
+          (SELECT req.event_id, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
+          FROM event_requirements AS req
+          GROUP BY req.event_id)
+        AS r on r.event_id = events.event_id)
+    AS events on events.event_id = volunteer_at_events.event_id
+    ${conditions};`;
+
 // get all submitted hours
 volunteerHoursRouter.get('/', async (req, res) => {
   try {
-    const submittedHours = await pool.query(
-      `SELECT *
-      FROM volunteer_at_events
-      WHERE volunteer_at_events.submitted = True;`,
-    );
+    const conditions = `WHERE volunteer_at_events.submitted = True`;
+    const submittedHours = await pool.query(getVolunteerHoursQuery(conditions));
     res.status(200).json(keysToCamel(submittedHours.rows));
   } catch (err) {
     res.status(400).json(err.message);
@@ -22,13 +33,9 @@ volunteerHoursRouter.get('/', async (req, res) => {
 volunteerHoursRouter.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const submittedHours = await pool.query(
-      `SELECT *
-      FROM volunteer_at_events
-      WHERE volunteer_at_events.user_id = $1;`,
-      [userId],
-    );
-    res.status(200).json(keysToCamel(submittedHours.rows));
+    const conditions = `WHERE volunteer_at_events.user_id = $1`;
+    const allHours = await pool.query(getVolunteerHoursQuery(conditions), [userId]);
+    res.status(200).json(keysToCamel(allHours.rows));
   } catch (err) {
     res.status(400).json(err.message);
   }
@@ -50,7 +57,9 @@ volunteerHoursRouter.post('/:userId/:eventId', async (req, res) => {
     const diff = end.getTime() - start.getTime();
     const numHours = parseInt(diff / (60000 * 60), 10);
 
-    const unsubmittedHours = await db.query(
+    const conditions = `WHERE volunteer_at_events.user_id = $(userId) AND
+                              volunteer_at_events.event_id = $(eventId)`;
+    const unsubmittedHours = await db.multi(
       `UPDATE volunteer_at_events
       SET
         start_datetime = $(startDatetime),
@@ -61,7 +70,8 @@ volunteerHoursRouter.post('/:userId/:eventId', async (req, res) => {
         num_hours = $(numHours)
         ${notes ? ', notes = $(notes)' : ''}
       WHERE user_id = $(userId) AND event_id = $(eventId)
-      RETURNING *;`,
+      RETURNING *;
+      ${getVolunteerHoursQuery(conditions)}`,
       {
         startDatetime,
         endDatetime,
@@ -74,54 +84,13 @@ volunteerHoursRouter.post('/:userId/:eventId', async (req, res) => {
         eventId,
       },
     );
-    res.status(200).json(keysToCamel(unsubmittedHours[0]));
+    res.status(200).json(keysToCamel(unsubmittedHours.pop()[0]));
   } catch (err) {
     res.status(400).json(err.message);
   }
 });
 
 // submit hours for a volunteer
-
-// create unsubmitted hours
-volunteerHoursRouter.post('/create', async (req, res) => {
-  try {
-    const { userId, eventId, startDatetime, endDatetime, notes } = req.body;
-    // calculate number of hours
-    const start = new Date(startDatetime);
-    const end = new Date(endDatetime);
-    const diff = end.getTime() - start.getTime();
-    const numHours = parseInt(diff / (60000 * 60), 10);
-
-    const createdHours = await db.query(
-      `INSERT INTO volunteer_hours (
-          user_id, event_id, start_datetime,
-          end_datetime, approved, num_hours,
-          notes, submitted, declined)
-        VALUES (
-          $(userId), $(eventId), $(startDatetime),
-          $(endDatetime), false, $(numHours),
-          $(notes), false, false
-        )
-        RETURNING *;
-      `,
-      {
-        userId,
-        eventId,
-        startDatetime,
-        endDatetime,
-        numHours,
-        notes,
-      },
-    );
-    if (createdHours.rows.length === 0) {
-      res.status(400).json();
-    } else {
-      res.status(200).json(createdHours.rows);
-    }
-  } catch (err) {
-    res.status(500).json(err.message);
-  }
-});
 
 // submitHours
 volunteerHoursRouter.put('/submit', async (req, res) => {

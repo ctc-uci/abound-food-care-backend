@@ -9,7 +9,7 @@ const getEventsQuery = (conditions = '') =>
   `SELECT events.*, requirements
   FROM events
     LEFT JOIN
-      (SELECT req.event_id, array_agg(req.requirement ORDER BY req.requirement ASC) as requirements
+      (SELECT req.event_id, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
         FROM event_requirements AS req
         GROUP BY req.event_id) AS r on r.event_id = events.event_id
   ${conditions}
