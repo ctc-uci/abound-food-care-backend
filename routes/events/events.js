@@ -90,7 +90,7 @@ eventRouter.get('/:eventId', async (req, res) => {
     isNumeric(eventId, 'Event Id must be a number');
     const conditions = 'WHERE events.event_id = $1';
     const event = await pool.query(getEventsQuery(conditions), [eventId]);
-    res.status(200).json(keysToCamel(event.rows[0]));
+    res.status(200).json(keysToCamel(event.rows));
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -213,23 +213,24 @@ eventRouter.put('/:eventId', async (req, res) => {
 
 // add postevent text
 // do not think this request is needed because can just use above request to update post event text
-// eventRouter.put('/add_post_text/:eventId', async (req, res) => {
-//   try {
-//     const { eventId } = req.params;
-//     isNumeric(eventId, 'Event Id must be a number');
-//     const { posteventText } = req.body;
-//     const updatedEvent = await pool.query(
-//       `UPDATE events
-//       SET postevent_text = $1
-//       WHERE event_id = $2
-//       RETURNING *;`,
-//       [posteventText, eventId],
-//     );
-//     res.status(200).json(keysToCamel(updatedEvent.rows[0]));
-//   } catch (err) {
-//     res.status(400).send(err.message);
-//   }
-// });
+// * needed for submitting post event text bc above request requires information that cannot be sent in req
+eventRouter.put('/add_post_text/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    isNumeric(eventId, 'Event Id must be a number');
+    const { posteventText } = req.body;
+    const updatedEvent = await pool.query(
+      `UPDATE events
+      SET postevent_text = $1
+      WHERE event_id = $2
+      RETURNING *;`,
+      [posteventText, eventId],
+    );
+    res.status(200).json(keysToCamel(updatedEvent.rows[0]));
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
 
 // delete an event
 eventRouter.delete('/:eventId', async (req, res) => {
@@ -249,16 +250,16 @@ eventRouter.delete('/:eventId', async (req, res) => {
 });
 
 // Get Volunteers By Event
-// eventRouter.get('/:id/volunteers', async (req, res) => {
-//   try {
-//     const getVolunteerByEvent = await pool.query(
-//       'SELECT user_id FROM volunteer_at_events WHERE event_id = $1;',
-//       [req.params.id],
-//     );
-//     res.status(200).json(getVolunteerByEvent.rows);
-//   } catch (err) {
-//     res.status(400).json(err);
-//   }
-// });
+eventRouter.get('/:id/volunteers', async (req, res) => {
+  try {
+    const getVolunteerByEvent = await pool.query(
+      'SELECT user_id FROM volunteer_at_events WHERE event_id = $1;',
+      [req.params.id],
+    );
+    res.status(200).json(getVolunteerByEvent.rows);
+  } catch (err) {
+    res.status(400).json(err);
+  }
+});
 
 module.exports = eventRouter;
