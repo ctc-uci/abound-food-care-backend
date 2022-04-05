@@ -1,6 +1,6 @@
 // endpoints related to postevent
 const express = require('express');
-const pool = require('../../db');
+const pool = require('../server/db');
 
 const posteventRouter = express();
 
@@ -40,6 +40,7 @@ posteventRouter.post('/create', async (req, res) => {
       'INSERT INTO postevent (event_id, description) VALUES($1, $2) RETURNING *;',
       [eventId, description],
     );
+
     res.status(200).json(createPostEvent.rows[0]);
   } catch (err) {
     res.status(400).json(err);

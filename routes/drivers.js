@@ -2,7 +2,7 @@
 const express = require('express');
 
 const driverRouter = express();
-const pool = require('../../db');
+const pool = require('../server/db');
 
 driverRouter.use(express.json());
 

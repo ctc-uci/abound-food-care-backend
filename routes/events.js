@@ -1,6 +1,6 @@
 // endpoints related to events
 const express = require('express');
-const pool = require('../../db');
+const pool = require('../server/db');
 
 const eventRouter = express();
 
@@ -132,6 +132,7 @@ eventRouter.post('/create', async (req, res) => {
       res.status(200).send(event);
     }
   } catch (err) {
+    console.error(req.body);
     res.status(500).json(err.message);
   }
 });
