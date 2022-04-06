@@ -6,6 +6,7 @@ const eventRouter = require('./routes/events/events');
 const volunteerHoursRouter = require('./routes/volunteers/volunteer_hours');
 const volunteerRouter = require('./routes/volunteers/volunteers');
 const availabilityRouter = require('./routes/users/availability');
+const waiversRouter = require('./routes/events/waivers');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -25,6 +26,7 @@ app.use('/hours', volunteerHoursRouter);
 app.use('/events', eventRouter);
 app.use('/users', userRouter);
 app.use('/availability', availabilityRouter);
+app.use('/waivers', waiversRouter);
 
 app.listen(PORT, () => {
   console.log(`Server listening on ${PORT}`);

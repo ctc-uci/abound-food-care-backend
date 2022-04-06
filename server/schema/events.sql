@@ -25,6 +25,15 @@ CREATE TABLE event_requirements (
   PRIMARY KEY(event_id, requirement),
 );
 
+DROP TABLE waivers CASCADE;
+CREATE TABLE waivers (
+  waiver_id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  link VARCHAR(255) NOT NULL,
+  event_id INT REFERENCES events(event_id) ON DELETE SET NULL,
+  notes TEXT,
+);
+
 DROP TABLE volunteer_at_events CASCADE;
 CREATE TABLE volunteer_at_events (
   user_id VARCHAR(128) REFERENCES users(user_id) ON DELETE CASCADE NOT NULL,
