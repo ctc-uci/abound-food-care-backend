@@ -12,7 +12,7 @@ const getEventsQuery = (conditions = '') =>
       (SELECT req.event_id, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
         FROM event_requirements AS req
         GROUP BY req.event_id) AS r on r.event_id = events.event_id
-    INNER JOIN
+    LEFT JOIN
       (SELECT waivers.event_id, array_agg(to_jsonb(waivers.*) - 'event_id' ORDER BY waivers.name) AS waivers
         FROM waivers
         GROUP BY waivers.event_id) AS waivers on waivers.event_id = events.event_id
