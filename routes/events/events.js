@@ -1,195 +1,255 @@
 // endpoints related to events
 const express = require('express');
-const pool = require('../../db');
+const { pool, db } = require('../../server/db');
+const { isNumeric, isZipCode, keysToCamel } = require('../utils');
 
 const eventRouter = express();
 
-eventRouter.use(express.json());
+const getEventsQuery = (conditions = '') =>
+  `SELECT events.*, requirements, waivers.waivers
+  FROM events
+    LEFT JOIN
+      (SELECT req.event_id, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
+        FROM event_requirements AS req
+        GROUP BY req.event_id) AS r on r.event_id = events.event_id
+    LEFT JOIN
+      (SELECT waivers.event_id, array_agg(to_jsonb(waivers.*) - 'event_id' ORDER BY waivers.name) AS waivers
+        FROM waivers
+        GROUP BY waivers.event_id) AS waivers on waivers.event_id = events.event_id
+  ${conditions}
+  ORDER BY start_datetime ASC;`;
 
-function snakeToCamel(events) {
-  return events.map((event) => ({
-    name: event.name,
-    ntype: event.ntype,
-    location: event.location,
-    startDateTime: event.start_datetime,
-    endDateTime: event.end_datetime,
-    volunteerType: event.volunteer_type,
-    volunteerRequirements: event.volunteer_requirements,
-    volunteerCapacity: event.volunteer_capacity,
-    fileAttachments: event.fileAttachments,
-    notes: event.notes,
-    id: event.event_id,
-  }));
-}
+const addRequirementQuery = (requirementKey) =>
+  `INSERT INTO event_requirements (event_id, requirement)
+  VALUES ($(eventId), $(${requirementKey}));`;
 
-// Get All Events Endpoint
+const addMulitRequirementsQuery = (requirementKeys) => {
+  let query = ``;
+  requirementKeys.forEach((requirementKey) => {
+    query += addRequirementQuery(requirementKey);
+  });
+  return query;
+};
+
+const updateEventRequirements = async (requirements, eventId, deletePreviousReqs = false) => {
+  const requirementQueryObject = requirements.reduce(
+    (requirementObj, requirement, index) => ({ ...requirementObj, [`req${index}`]: requirement }),
+    {},
+  );
+  const conditions = `WHERE events.event_id = $(eventId)`;
+  const results = await db.multi(
+    `${deletePreviousReqs ? 'DELETE FROM event_requirements WHERE event_id = $(eventId);' : ''}
+    ${addMulitRequirementsQuery(Object.keys(requirementQueryObject))}
+    ${getEventsQuery(conditions)}`,
+    {
+      ...requirementQueryObject,
+      eventId,
+    },
+  );
+  return results.pop()[0];
+};
+
+// get all events
 eventRouter.get('/', async (req, res) => {
   try {
-    const getAllEvents = await pool.query('SELECT * FROM event ORDER BY start_datetime ASC;');
-    if (getAllEvents.rowCount === 0) {
-      res.status(400).json();
-    } else {
-      res.status(200).json(snakeToCamel(getAllEvents.rows));
-    }
+    const conditions = '';
+    const events = await pool.query(getEventsQuery(conditions));
+    res.status(200).json(keysToCamel(events.rows));
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(400).send(err.message);
   }
 });
 
-// Get All Upcoming Events Endpoint
-eventRouter.get('/upcoming', async (req, res) => {
+// get all upcoming events
+// dont think we need this because event filtering should be done in the frontend
+// just need to use the get all events endpoint
+// eventRouter.get('/upcoming', async (req, res) => {
+//   try {
+//     const currDate = new Date();
+//     const conditions = 'WHERE start_datetime >= $1';
+//     const events = await pool.query(getEventsQuery(conditions), [currDate]);
+//     res.status(200).json(keysToCamel(events.rows));
+//   } catch (err) {
+//     res.status(400).send(err.message);
+//   }
+// });
+
+// get all past events
+// dont think we need this because event filtering should be done in the frontend
+// eventRouter.get('/past', async (req, res) => {
+//   try {
+//     const currDate = new Date();
+//     const conditions = 'WHERE start_datetime < $1';
+//     const events = await pool.query(getEventsQuery(conditions), [currDate]);
+//     res.status(200).json(keysToCamel(events.rows));
+//   } catch (err) {
+//     res.status(400).send(err.message);
+//   }
+// });
+
+// get an event
+eventRouter.get('/:eventId', async (req, res) => {
   try {
-    const currDate = new Date();
-    const getAllEvents = await pool.query(
-      'SELECT * FROM event WHERE start_datetime >= $1 ORDER BY start_datetime ASC;',
-      [currDate],
-    );
-    if (getAllEvents.rowCount === 0) {
-      res.status(400).json();
-    } else {
-      res.status(200).json(snakeToCamel(getAllEvents.rows));
-    }
+    const { eventId } = req.params;
+    isNumeric(eventId, 'Event Id must be a number');
+    const conditions = 'WHERE events.event_id = $1';
+    const event = await pool.query(getEventsQuery(conditions), [eventId]);
+    res.status(200).json(keysToCamel(event.rows));
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(400).send(err.message);
   }
 });
 
-// Get All Past Events Endpoint
-eventRouter.get('/past', async (req, res) => {
-  try {
-    const currDate = new Date();
-    const getAllEvents = await pool.query(
-      'SELECT * FROM event WHERE start_datetime < $1 ORDER BY start_datetime DESC;',
-      [currDate],
-    );
-    if (getAllEvents.rowCount === 0) {
-      res.status(400).json();
-    } else {
-      res.status(200).json(snakeToCamel(getAllEvents.rows));
-    }
-  } catch (err) {
-    res.status(500).json(err.message);
-  }
-});
-// Get Event Endpoint
-eventRouter.get('/:id', async (req, res) => {
-  try {
-    const getEventById = await pool.query('SELECT * FROM event WHERE event.event_id = $1;', [
-      req.params.id,
-    ]);
-    res.status(200).json(getEventById.rows);
-  } catch (err) {
-    res.status(500).json(err.message);
-  }
-});
-
-// Create Event Endpoint
-eventRouter.post('/create', async (req, res) => {
+// add an event
+eventRouter.post('/', async (req, res) => {
   try {
     const {
       name,
-      ntype,
-      location,
-      startDateTime,
-      endDateTime,
-      volunteerType,
-      volunteerRequirements,
+      eventType,
+      addressStreet,
+      addressZip,
+      addressCity,
+      addressState,
+      startDatetime,
+      endDatetime,
       volunteerCapacity,
       fileAttachments,
       notes,
+      requirements,
     } = req.body;
-    const createEventResponse = await pool.query(
-      `INSERT INTO event(
+    isZipCode(addressZip, 'Invalid Zip Code');
+    isNumeric(volunteerCapacity, 'Volunteer Capacity is not a Number');
+    let newEvent = await db.query(
+      `INSERT INTO events (
+        name, event_type, address_street, address_zip, address_city,
+        address_state, start_datetime, end_datetime, volunteer_capacity
+        ${fileAttachments ? ', file_attachments' : ''}
+        ${notes ? ', notes' : ''})
+      VALUES (
+        $(name), $(eventType), $(addressStreet), $(addressZip), $(addressCity),
+        $(addressState), $(startDatetime), $(endDatetime), $(volunteerCapacity)
+        ${fileAttachments ? ', $(fileAttachments)' : ''}
+        ${notes ? ', $(notes)' : ''})
+      RETURNING *;`,
+      {
         name,
-        ntype,
-        location,
-        start_datetime,
-        end_datetime,
-        volunteer_type,
-        volunteer_requirements,
-        volunteer_capacity,
-        file_attachments,
-        notes)
-        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING *`,
-      [
-        name,
-        ntype,
-        location,
-        startDateTime,
-        endDateTime,
-        volunteerType,
-        volunteerRequirements,
+        eventType,
+        addressStreet,
+        addressZip,
+        addressCity,
+        addressState,
+        startDatetime,
+        endDatetime,
         volunteerCapacity,
         fileAttachments,
         notes,
-      ],
+      },
     );
-    if (createEventResponse.rowCount === 0) {
-      res.status(400).send();
-    } else {
-      const event = snakeToCamel(createEventResponse.rows);
-      res.status(200).send(event);
-    }
+    const eventId = newEvent[0].event_id;
+    newEvent = await updateEventRequirements(requirements, eventId);
+    res.status(200).json(keysToCamel(newEvent));
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(400).send(err.message);
   }
 });
 
-// Update Event Endpoint
-eventRouter.put('/:id', async (req, res) => {
+// update an event
+eventRouter.put('/:eventId', async (req, res) => {
   try {
-    const { id } = req.params;
+    const { eventId } = req.params;
+    isNumeric(eventId, 'Event Id must be a number');
     const {
       name,
-      ntype,
-      location,
-      startDateTime,
-      endDateTime,
-      volunteerType,
-      volunteerRequirements,
+      eventType,
+      addressStreet,
+      addressZip,
+      addressCity,
+      addressState,
+      startDatetime,
+      endDatetime,
       volunteerCapacity,
       fileAttachments,
       notes,
+      posteventText,
+      requirements,
     } = req.body;
-
-    const updateEventResponse = await pool.query(
-      `UPDATE event
-        SET
-        name = $1,
-        ntype = $2,
-        location = $3,
-        start_date_time = $4,
-        end_date_time = $5,
-        volunteer_type = $6,
-        volunteer_requirements = $7,
-        volunteer_capacity = $8,
-        file_attachments = $9,
-        notes = $10
-        WHERE event_id = $11
-        RETURNING *`,
-      [
+    isZipCode(addressZip, 'Invalid Zip Code');
+    isNumeric(volunteerCapacity, 'Volunteer Capacity is not a Number');
+    await db.query(
+      `UPDATE events
+      SET
+        name = $(name),
+        event_type = $(eventType),
+        address_street = $(addressStreet),
+        address_zip = $(addressZip),
+        address_city = $(addressCity),
+        address_state = $(addressState),
+        start_datetime = $(startDatetime),
+        end_datetime = $(endDatetime),
+        volunteer_capacity = $(volunteerCapacity)
+        ${fileAttachments ? ', file_attachments = $(fileAttachments)' : ''}
+        ${notes ? ', notes = $(notes)' : ''}
+        ${posteventText ? ', postevent_text = $(posteventText)' : ''}
+      WHERE event_id = $(eventId)
+      RETURNING *;`,
+      {
         name,
-        ntype,
-        location,
-        startDateTime,
-        endDateTime,
-        volunteerType,
-        volunteerRequirements,
+        eventType,
+        addressStreet,
+        addressZip,
+        addressCity,
+        addressState,
+        startDatetime,
+        endDatetime,
         volunteerCapacity,
         fileAttachments,
         notes,
-        id,
-      ],
+        posteventText,
+        eventId,
+      },
     );
-    if (updateEventResponse.rowCount === 0) {
-      res.status(400).json();
-    } else {
-      const newEventResponse = snakeToCamel(updateEventResponse.rows);
-      res.status(200).json(newEventResponse);
-    }
+    const updatedEvent = await updateEventRequirements(requirements, eventId, true);
+    res.status(200).json(keysToCamel(updatedEvent));
   } catch (err) {
-    res.status(500).json(err.message);
+    res.status(400).send(err.message);
+  }
+});
+
+// add postevent text
+// do not think this request is needed because can just use above request to update post event text
+// * needed for submitting post event text bc above request requires information that cannot be sent in req
+eventRouter.put('/add_post_text/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    isNumeric(eventId, 'Event Id must be a number');
+    const { posteventText } = req.body;
+    const updatedEvent = await pool.query(
+      `UPDATE events
+      SET postevent_text = $1
+      WHERE event_id = $2
+      RETURNING *;`,
+      [posteventText, eventId],
+    );
+    res.status(200).json(keysToCamel(updatedEvent.rows[0]));
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
+
+// delete an event
+eventRouter.delete('/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    isNumeric(eventId, 'Event Id must be a number');
+    const deletedEvent = await pool.query(
+      `DELETE FROM events
+      WHERE event_id = $1
+      RETURNING *;`,
+      [eventId],
+    );
+    res.status(200).json(keysToCamel(deletedEvent.rows[0]));
+  } catch (err) {
+    res.status(400).send(err.message);
   }
 });
 
