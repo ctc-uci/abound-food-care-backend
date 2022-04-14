@@ -16,8 +16,10 @@
     "*.js": "yarn run eslint"
   },
   "dependencies": {
+    "aws-sdk": "^2.1114.0",
     "circular-json": "^0.5.9",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^10.0.0",
     "eslint": "^8.2.0",
     "eslint-config-airbnb-base": "^14.2.1",
