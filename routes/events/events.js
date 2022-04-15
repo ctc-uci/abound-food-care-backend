@@ -49,6 +49,46 @@ const updateEventRequirements = async (requirements, eventId, deletePreviousReqs
   return results.pop()[0];
 };
 
+const addWaiverQuery = (name, link, uploadedDate) =>
+  `INSERT INTO waivers (name, link, upload_date, event_id)
+  VALUES ($(${name}), $(${link}), $(${uploadedDate}), $(eventId));`;
+
+const addMulitWaiversQuery = (waivers) => {
+  let query = ``;
+  waivers.forEach((waiver) => {
+    query += addWaiverQuery(...Object.keys(waiver));
+  });
+  return query;
+};
+
+const updateEventWaivers = async (waivers, eventId, deletePreviousWaivers = false) => {
+  const waiverQueryObject = waivers.reduce(
+    (waiverArray, waiver, index) => [
+      ...waiverArray,
+      {
+        [`name${index}`]: waiver.name,
+        [`link${index}`]: waiver.link,
+        [`uploadDate${index}`]: new Date(),
+      },
+    ],
+    [],
+  );
+  const conditions = `WHERE waivers.event_id = $(eventId)`;
+  const results = await db.multi(
+    `${deletePreviousWaivers ? 'DELETE FROM waivers WHERE event_id = $(eventId);' : ''}
+    ${addMulitWaiversQuery(waiverQueryObject)}
+    ${getEventsQuery(conditions)}`,
+    {
+      ...waiverQueryObject.reduce(
+        (combinedWaivers, waiver) => ({ ...combinedWaivers, ...waiver }),
+        {},
+      ),
+      eventId,
+    },
+  );
+  return results.pop()[0];
+};
+
 // get all events
 eventRouter.get('/', async (req, res) => {
   try {
@@ -59,33 +99,6 @@ eventRouter.get('/', async (req, res) => {
     res.status(400).send(err.message);
   }
 });
-
-// get all upcoming events
-// dont think we need this because event filtering should be done in the frontend
-// just need to use the get all events endpoint
-// eventRouter.get('/upcoming', async (req, res) => {
-//   try {
-//     const currDate = new Date();
-//     const conditions = 'WHERE start_datetime >= $1';
-//     const events = await pool.query(getEventsQuery(conditions), [currDate]);
-//     res.status(200).json(keysToCamel(events.rows));
-//   } catch (err) {
-//     res.status(400).send(err.message);
-//   }
-// });
-
-// get all past events
-// dont think we need this because event filtering should be done in the frontend
-// eventRouter.get('/past', async (req, res) => {
-//   try {
-//     const currDate = new Date();
-//     const conditions = 'WHERE start_datetime < $1';
-//     const events = await pool.query(getEventsQuery(conditions), [currDate]);
-//     res.status(200).json(keysToCamel(events.rows));
-//   } catch (err) {
-//     res.status(400).send(err.message);
-//   }
-// });
 
 // get an event
 eventRouter.get('/:eventId', async (req, res) => {
@@ -113,9 +126,9 @@ eventRouter.post('/', async (req, res) => {
       startDatetime,
       endDatetime,
       volunteerCapacity,
-      fileAttachments,
       notes,
       requirements,
+      waivers,
     } = req.body;
     isZipCode(addressZip, 'Invalid Zip Code');
     isNumeric(volunteerCapacity, 'Volunteer Capacity is not a Number');
@@ -123,12 +136,10 @@ eventRouter.post('/', async (req, res) => {
       `INSERT INTO events (
         name, event_type, address_street, address_zip, address_city,
         address_state, start_datetime, end_datetime, volunteer_capacity
-        ${fileAttachments ? ', file_attachments' : ''}
         ${notes ? ', notes' : ''})
       VALUES (
         $(name), $(eventType), $(addressStreet), $(addressZip), $(addressCity),
         $(addressState), $(startDatetime), $(endDatetime), $(volunteerCapacity)
-        ${fileAttachments ? ', $(fileAttachments)' : ''}
         ${notes ? ', $(notes)' : ''})
       RETURNING *;`,
       {
@@ -141,12 +152,12 @@ eventRouter.post('/', async (req, res) => {
         startDatetime,
         endDatetime,
         volunteerCapacity,
-        fileAttachments,
         notes,
       },
     );
     const eventId = newEvent[0].event_id;
-    newEvent = await updateEventRequirements(requirements, eventId);
+    await updateEventRequirements(requirements, eventId);
+    newEvent = await updateEventWaivers(waivers, eventId);
     res.status(200).json(keysToCamel(newEvent));
   } catch (err) {
     res.status(400).send(err.message);
@@ -168,10 +179,10 @@ eventRouter.put('/:eventId', async (req, res) => {
       startDatetime,
       endDatetime,
       volunteerCapacity,
-      fileAttachments,
       notes,
       posteventText,
       requirements,
+      waivers,
     } = req.body;
     isZipCode(addressZip, 'Invalid Zip Code');
     isNumeric(volunteerCapacity, 'Volunteer Capacity is not a Number');
@@ -187,7 +198,6 @@ eventRouter.put('/:eventId', async (req, res) => {
         start_datetime = $(startDatetime),
         end_datetime = $(endDatetime),
         volunteer_capacity = $(volunteerCapacity)
-        ${fileAttachments ? ', file_attachments = $(fileAttachments)' : ''}
         ${notes ? ', notes = $(notes)' : ''}
         ${posteventText ? ', postevent_text = $(posteventText)' : ''}
       WHERE event_id = $(eventId)
@@ -202,13 +212,13 @@ eventRouter.put('/:eventId', async (req, res) => {
         startDatetime,
         endDatetime,
         volunteerCapacity,
-        fileAttachments,
         notes,
         posteventText,
         eventId,
       },
     );
-    const updatedEvent = await updateEventRequirements(requirements, eventId, true);
+    await updateEventRequirements(requirements, eventId, true);
+    const updatedEvent = await updateEventWaivers(waivers, eventId, true);
     res.status(200).json(keysToCamel(updatedEvent));
   } catch (err) {
     res.status(400).send(err.message);
