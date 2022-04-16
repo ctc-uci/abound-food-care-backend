@@ -69,6 +69,14 @@ const keysToCamel = (data) => {
       return keysToCamel(i);
     });
   }
+  if (
+    typeof data === 'string' &&
+    data.length > 0 &&
+    data[0] === '{' &&
+    data[data.length - 1] === '}'
+  ) {
+    return data.match(/[\w.-]+/g);
+  }
   return data;
 };
 
