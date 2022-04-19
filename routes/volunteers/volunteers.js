@@ -15,6 +15,20 @@ volunteerRouter.get('/', async (req, res) => {
   }
 });
 
+// Get Total # Of Events
+volunteerRouter.get('/total', async (req, res) => {
+  try {
+    const numVolunteers = await pool.query(
+      `SELECT COUNT(*) FROM users
+        WHERE role = $1`,
+      ['volunteer'],
+    );
+    res.status(200).json(numVolunteers.rows[0]);
+  } catch (err) {
+    res.status(400).json(err);
+  }
+});
+
 // get all event ids a volunteer is signed up for
 volunteerRouter.get('/:userId', async (req, res) => {
   try {

@@ -60,32 +60,37 @@ eventRouter.get('/', async (req, res) => {
   }
 });
 
-// get all upcoming events
-// dont think we need this because event filtering should be done in the frontend
-// just need to use the get all events endpoint
-// eventRouter.get('/upcoming', async (req, res) => {
-//   try {
-//     const currDate = new Date();
-//     const conditions = 'WHERE start_datetime >= $1';
-//     const events = await pool.query(getEventsQuery(conditions), [currDate]);
-//     res.status(200).json(keysToCamel(events.rows));
-//   } catch (err) {
-//     res.status(400).send(err.message);
-//   }
-// });
+// Get Total # Of Events
+eventRouter.get('/total', async (req, res) => {
+  try {
+    const numEvents = await pool.query('SELECT COUNT(*) FROM events');
+    res.status(200).json(numEvents.rows[0]);
+  } catch (err) {
+    res.status(400).json(err);
+  }
+});
 
-// get all past events
-// dont think we need this because event filtering should be done in the frontend
-// eventRouter.get('/past', async (req, res) => {
-//   try {
-//     const currDate = new Date();
-//     const conditions = 'WHERE start_datetime < $1';
-//     const events = await pool.query(getEventsQuery(conditions), [currDate]);
-//     res.status(200).json(keysToCamel(events.rows));
-//   } catch (err) {
-//     res.status(400).send(err.message);
-//   }
-// });
+eventRouter.get('/upcoming', async (req, res) => {
+  try {
+    const currDate = new Date();
+    const conditions = 'WHERE start_datetime >= $1';
+    const events = await pool.query(getEventsQuery(conditions), [currDate]);
+    res.status(200).json(keysToCamel(events.rows));
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
+
+eventRouter.get('/past', async (req, res) => {
+  try {
+    const currDate = new Date();
+    const conditions = 'WHERE start_datetime < $1';
+    const events = await pool.query(getEventsQuery(conditions), [currDate]);
+    res.status(200).json(keysToCamel(events.rows));
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
 
 // get an event
 eventRouter.get('/:eventId', async (req, res) => {
