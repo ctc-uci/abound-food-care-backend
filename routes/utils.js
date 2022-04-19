@@ -75,7 +75,9 @@ const keysToCamel = (data) => {
     data[0] === '{' &&
     data[data.length - 1] === '}'
   ) {
-    return data.match(/[\w.-]+/g);
+    let parsedList = data.replaceAll('"', '');
+    parsedList = parsedList.slice(1, parsedList.length - 1).split(',');
+    return parsedList;
   }
   return data;
 };
