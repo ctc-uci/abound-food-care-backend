@@ -13,7 +13,7 @@ CREATE TABLE events (
   start_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
   end_datetime TIMESTAMP WITH TIME ZONE NOT NULL,
   volunteer_capacity INT NOT NULL,
-  file_attachments VARCHAR(255),
+  -- file_attachments VARCHAR(255),
   notes TEXT,
   postevent_text TEXT,
 );
@@ -30,8 +30,10 @@ CREATE TABLE waivers (
   waiver_id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   link VARCHAR(255) NOT NULL,
+  upload_date DATE NOT NULL,
   event_id INT REFERENCES events(event_id) ON DELETE SET NULL,
-  notes TEXT,
+  user_id VARCHAR(128) REFERENCES users(user_id) ON DELETE CASCADE, -- havent added to DB yet
+  notes TEXT, -- do we need this?
 );
 
 DROP TABLE volunteer_at_events CASCADE;
