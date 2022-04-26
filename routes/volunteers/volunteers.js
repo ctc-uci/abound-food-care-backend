@@ -116,26 +116,25 @@ volunteerRouter.get('/events/:eventId', async (req, res) => {
 //   }
 // });
 
-// get all available volunteers
-// volunteerRouter.get('/available', async (req, res) => {
-//   try {
-//     const resData = {};
-//     // assume startTime and endTime is a timestamp
-//     const volunteers = await pool.query('SELECT * FROM availability');
-//     volunteers.rows.forEach((volunteerHour) => {
-//       const startTime = volunteerHour.start_time.substring(0, 5);
-//       const endTime = volunteerHour.end_time.substring(0, 5);
-//       const day = volunteerHour.day_of_week;
+volunteerRouter.get('/available', async (req, res) => {
+  try {
+    const resData = {};
+    // assume startTime and endTime is a timestamp
+    const volunteers = await pool.query('SELECT * FROM availability');
+    volunteers.rows.forEach((volunteerHour) => {
+      const startTime = volunteerHour.start_time.substring(0, 5);
+      const endTime = volunteerHour.end_time.substring(0, 5);
+      const day = volunteerHour.day_of_week;
 
-//       resData[`${day} ${startTime} to ${endTime}`] =
-//         (resData[`${day} ${startTime} to ${endTime}`] ?? 0) + 1;
-//     });
+      resData[`${day} ${startTime} to ${endTime}`] =
+        (resData[`${day} ${startTime} to ${endTime}`] ?? 0) + 1;
+    });
 
-//     res.status(200).json(resData);
-//   } catch (err) {
-//     res.status(400).json(err.message);
-//   }
-// });
+    res.status(200).json(resData);
+  } catch (err) {
+    res.status(400).json(err.message);
+  }
+});
 
 // get number of volunteers at specific event
 // volunteerRouter.get('/:eventId', async (req, res) => {
