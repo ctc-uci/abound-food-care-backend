@@ -29,6 +29,23 @@ volunteerRouter.get('/total', async (req, res) => {
   }
 });
 
+// get # of events that volunteer is signed up for
+volunteerRouter.get('/:userId/total-events', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const numEvents = await pool.query(
+      `SELECT COUNT(*)
+      FROM volunteer_at_events
+      WHERE user_id = $1
+      GROUP BY user_id`,
+      [userId],
+    );
+    res.status(200).json(keysToCamel(numEvents.rows[0]));
+  } catch (err) {
+    res.status(400).json(err.message);
+  }
+});
+
 // get all event ids a volunteer is signed up for
 volunteerRouter.get('/:userId', async (req, res) => {
   try {
