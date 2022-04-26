@@ -307,7 +307,6 @@ userRouter.put('/general-info/:userId', async (req, res) => {
     const { userId } = req.params;
     const {
       organization,
-      birthdate,
       phone,
       preferredContactMethod,
       addressStreet,
@@ -320,7 +319,6 @@ userRouter.put('/general-info/:userId', async (req, res) => {
       `UPDATE users
       SET
         organization = $(organization),
-        birthdate = $(birthdate),
         phone = $(phone),
         preferred_contact_method = $(preferredContactMethod),
         address_street = $(addressStreet),
@@ -331,7 +329,6 @@ userRouter.put('/general-info/:userId', async (req, res) => {
     RETURNING *;`,
       {
         organization,
-        birthdate,
         phone,
         preferredContactMethod,
         addressStreet,
@@ -366,6 +363,7 @@ userRouter.put('/roles-skills/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const {
+      role,
       foodRunsInterest,
       distributionInterest,
       firstAidTraining,
@@ -398,8 +396,9 @@ userRouter.put('/roles-skills/:userId', async (req, res) => {
     await db.query(
       `UPDATE users
       SET
-        ${foodRunsInterest ? 'food_runs_interest = $(foodRunsInterest), ' : ''}
-        ${distributionInterest ? 'distribution_interest = $(distributionInterest), ' : ''}
+        role = $(role),
+        food_runs_interest = $(foodRunsInterest),
+        distribution_interest = $(distributionInterest),
         can_drive = $(canDrive),
         willing_to_drive = $(willingToDrive),
         ${vehicleType ? 'vehicle_type = $(vehicleType), ' : ''}
@@ -414,6 +413,7 @@ userRouter.put('/roles-skills/:userId', async (req, res) => {
         completed_chowmatch_training = $(completedChowmatchTraining)
       WHERE user_id = $(userId);`,
       {
+        role,
         foodRunsInterest,
         distributionInterest,
         firstAidTraining,
