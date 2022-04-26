@@ -29,6 +29,7 @@ volunteerRouter.get('/total', async (req, res) => {
   }
 });
 
+// get # of events that volunteer is signed up for
 volunteerRouter.get('/:userId/total-events', async (req, res) => {
   try {
     const { userId } = req.params;
