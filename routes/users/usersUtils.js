@@ -1,28 +1,25 @@
 const { isNumeric, isPhoneNumber, isBoolean, isZipCode } = require('../utils');
 
-const validateUserInfo = (
-  phone,
-  addressZip,
-  weightLiftingAbility,
-  criminalHistory,
-  duiHistory,
-  completedChowmatchTraining,
+const validateGeneralInfo = (phone, addressZip) => {
+  isPhoneNumber(phone, 'Invalid Phone Number');
+  isZipCode(addressZip, 'Invalid Zip Code');
+};
+
+const validateRolesAndSkills = (
   foodRunsInterest,
   distributionInterest,
-  canDrive,
-  willingToDrive,
-  distance,
   firstAidTraining,
   serveSafeKnowledge,
   transportationExperience,
   movingWarehouseExperience,
   foodServiceIndustryKnowledge,
+  weightLiftingAbility,
+  completedChowmatchTraining,
+  canDrive,
+  willingToDrive,
+  distance,
 ) => {
-  isPhoneNumber(phone, 'Invalid Phone Number');
-  isZipCode(addressZip, 'Invalid Zip Code');
   isNumeric(weightLiftingAbility, 'Weight Lifting Ability is not a Number');
-  isBoolean(criminalHistory, 'Criminal History is not a Boolean Value');
-  isBoolean(duiHistory, 'DUI History is not a Boolean Value');
   isBoolean(completedChowmatchTraining, 'Completed Chowmatch Training is not a Boolean Value');
   if (foodRunsInterest) {
     isBoolean(foodRunsInterest, 'Food Runs Interest is not a Boolean Value');
@@ -42,4 +39,50 @@ const validateUserInfo = (
   isBoolean(foodServiceIndustryKnowledge, 'Food Service Industry Knowledge is not a Boolean Value');
 };
 
-module.exports = validateUserInfo;
+const validateDUICriminal = (criminalHistory, duiHistory) => {
+  isBoolean(criminalHistory, 'Criminal History is not a Boolean Value');
+  isBoolean(duiHistory, 'DUI History is not a Boolean Value');
+};
+
+const validateAllUserInfo = (
+  phone,
+  addressZip,
+  weightLiftingAbility,
+  criminalHistory,
+  duiHistory,
+  completedChowmatchTraining,
+  foodRunsInterest,
+  distributionInterest,
+  canDrive,
+  willingToDrive,
+  distance,
+  firstAidTraining,
+  serveSafeKnowledge,
+  transportationExperience,
+  movingWarehouseExperience,
+  foodServiceIndustryKnowledge,
+) => {
+  validateGeneralInfo(phone, addressZip);
+  validateRolesAndSkills(
+    foodRunsInterest,
+    distributionInterest,
+    firstAidTraining,
+    serveSafeKnowledge,
+    transportationExperience,
+    movingWarehouseExperience,
+    foodServiceIndustryKnowledge,
+    weightLiftingAbility,
+    completedChowmatchTraining,
+    canDrive,
+    willingToDrive,
+    distance,
+  );
+  validateDUICriminal(criminalHistory, duiHistory);
+};
+
+module.exports = {
+  validateGeneralInfo,
+  validateRolesAndSkills,
+  validateDUICriminal,
+  validateAllUserInfo,
+};
