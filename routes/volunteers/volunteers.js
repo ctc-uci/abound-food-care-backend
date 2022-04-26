@@ -51,7 +51,7 @@ volunteerRouter.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const eventIds = await pool.query(
-      `SELECT COUNT(*) array_agg(event_id ORDER BY event_id ASC) as event_ids
+      `SELECT array_agg(event_id ORDER BY event_id ASC) as event_ids
       FROM volunteer_at_events
       WHERE user_id = $1
       GROUP BY user_id`,
