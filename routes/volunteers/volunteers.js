@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../../server/db');
 const { isNumeric, keysToCamel, getUsersQuery } = require('../utils');
+const { addWaivers } = require('../events/eventsUtils');
 
 const volunteerRouter = express();
 
@@ -67,6 +68,7 @@ volunteerRouter.get('/:userId', async (req, res) => {
 volunteerRouter.post('/:userId/:eventId', async (req, res) => {
   try {
     const { userId, eventId } = req.params;
+    const { waivers } = req.body;
     isNumeric(eventId, 'Event Id must be a number');
     const signUp = await pool.query(
       `INSERT INTO volunteer_at_events
@@ -75,6 +77,7 @@ volunteerRouter.post('/:userId/:eventId', async (req, res) => {
       RETURNING *;`,
       [userId, eventId],
     );
+    await addWaivers(waivers, eventId, userId);
     res.status(200).json(keysToCamel(signUp.rows[0]));
   } catch (err) {
     res.status(400).json(err.message);

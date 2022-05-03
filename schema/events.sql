@@ -38,3 +38,13 @@ CREATE TABLE volunteer_at_events (
   notes TEXT,
   PRIMARY KEY (user_id, event_id)
 );
+
+DROP TABLE IF EXISTS waivers CASCADE;
+CREATE TABLE waivers (
+  waiver_id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  link VARCHAR(255) NOT NULL,
+  event_id INT REFERENCES events(event_id) ON DELETE SET NULL,
+  user_id VARCHAR(128) REFERENCES users(user_id) ON DELETE CASCADE, -- new
+  notes TEXT
+);

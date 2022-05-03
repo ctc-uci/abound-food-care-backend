@@ -1,7 +1,7 @@
 const express = require('express');
 const { pool, db } = require('../../server/db');
 const { isNumeric, isZipCode, keysToCamel } = require('../utils');
-const { updateEventRequirements, updateEventWaivers, getEventsQuery } = require('./eventsUtils');
+const { updateEventRequirements, addWaivers, getEventsQuery } = require('./eventsUtils');
 
 const eventRouter = express();
 
@@ -55,7 +55,7 @@ eventRouter.get('/:eventId', async (req, res) => {
     isNumeric(eventId, 'Event Id must be a number');
     const conditions = 'WHERE events.event_id = $1';
     const event = await pool.query(getEventsQuery(conditions), [eventId]);
-    res.status(200).json(keysToCamel(event.rows));
+    res.status(200).json(keysToCamel(event.rows[0]));
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -105,8 +105,10 @@ eventRouter.post('/', async (req, res) => {
     );
     const eventId = newEvent[0].event_id;
     await updateEventRequirements(requirements, eventId);
-    newEvent = await updateEventWaivers(waivers, eventId);
-    res.status(200).json(keysToCamel(newEvent));
+    await addWaivers(waivers, eventId);
+    const conditions = 'WHERE events.event_id = $1';
+    newEvent = await pool.query(getEventsQuery(conditions), [eventId]);
+    res.status(200).json(keysToCamel(newEvent.rows[0]));
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -130,7 +132,6 @@ eventRouter.put('/:eventId', async (req, res) => {
       notes,
       posteventText,
       requirements,
-      waivers,
     } = req.body;
     isZipCode(addressZip, 'Invalid Zip Code');
     isNumeric(volunteerCapacity, 'Volunteer Capacity is not a Number');
@@ -166,8 +167,9 @@ eventRouter.put('/:eventId', async (req, res) => {
       },
     );
     await updateEventRequirements(requirements, eventId, true);
-    const updatedEvent = await updateEventWaivers(waivers, eventId, true);
-    res.status(200).json(keysToCamel(updatedEvent));
+    const conditions = 'WHERE events.event_id = $1';
+    const event = await pool.query(getEventsQuery(conditions), [eventId]);
+    res.status(200).json(keysToCamel(event.rows[0]));
   } catch (err) {
     res.status(400).send(err.message);
   }
