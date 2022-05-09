@@ -10,6 +10,7 @@ const getEventsQuery = (conditions = '') =>
     LEFT JOIN
       (SELECT waivers.event_id, array_agg(to_jsonb(waivers.*) - 'event_id' ORDER BY waivers.name) AS waivers
         FROM waivers
+        WHERE waivers.user_id is NULL
         GROUP BY waivers.event_id) AS waivers on waivers.event_id = events.event_id
   ${conditions}
   ORDER BY start_datetime ASC;`;
@@ -44,19 +45,22 @@ const updateEventRequirements = async (requirements, eventId, deletePreviousReqs
   return results.pop()[0];
 };
 
-const addWaiverQuery = (name, link, uploadedDate) =>
-  `INSERT INTO waivers (name, link, upload_date, event_id)
-  VALUES ($(${name}), $(${link}), $(${uploadedDate}), $(eventId));`;
+const addWaiverQuery = (name, link, uploadedDate, userId) =>
+  `INSERT INTO waivers (name, link, upload_date, event_id
+    ${userId !== '' ? ', user_id' : ''})
+  VALUES ($(${name}), $(${link}), $(${uploadedDate}), $(eventId)
+    ${userId !== '' ? ', $(userId)' : ''}
+  );`;
 
-const addMulitWaiversQuery = (waivers) => {
+const addMulitWaiversQuery = (waivers, userId) => {
   let query = ``;
   waivers.forEach((waiver) => {
-    query += addWaiverQuery(...Object.keys(waiver));
+    query += addWaiverQuery(...Object.keys(waiver), userId);
   });
   return query;
 };
 
-const updateEventWaivers = async (waivers, eventId, deletePreviousWaivers = false) => {
+const addWaivers = async (waivers, eventId, userId = '') => {
   const waiverQueryObject = waivers.reduce(
     (waiverArray, waiver, index) => [
       ...waiverArray,
@@ -68,20 +72,14 @@ const updateEventWaivers = async (waivers, eventId, deletePreviousWaivers = fals
     ],
     [],
   );
-  const conditions = `WHERE events.event_id = $(eventId)`;
-  const results = await db.multi(
-    `${deletePreviousWaivers ? 'DELETE FROM waivers WHERE event_id = $(eventId);' : ''}
-    ${addMulitWaiversQuery(waiverQueryObject)}
-    ${getEventsQuery(conditions)}`,
-    {
-      ...waiverQueryObject.reduce(
-        (combinedWaivers, waiver) => ({ ...combinedWaivers, ...waiver }),
-        {},
-      ),
-      eventId,
-    },
-  );
-  return results.pop()[0];
+  await db.multi(`${addMulitWaiversQuery(waiverQueryObject, userId)}`, {
+    ...waiverQueryObject.reduce(
+      (combinedWaivers, waiver) => ({ ...combinedWaivers, ...waiver }),
+      {},
+    ),
+    eventId,
+    userId,
+  });
 };
 
-module.exports = { updateEventRequirements, updateEventWaivers, getEventsQuery };
+module.exports = { updateEventRequirements, addWaivers, getEventsQuery };
