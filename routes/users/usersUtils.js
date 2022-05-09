@@ -1,4 +1,4 @@
-const { isNumeric, isPhoneNumber, isBoolean, isZipCode } = require('../utils');
+const { isNumeric, isPhoneNumber, isBoolean, isZipCode, isArray } = require('../utils');
 
 const validateGeneralInfo = (phone, addressZip) => {
   isPhoneNumber(phone, 'Invalid Phone Number');
@@ -80,9 +80,54 @@ const validateAllUserInfo = (
   validateDUICriminal(criminalHistory, duiHistory);
 };
 
+const getIncrements = (startTime, endTime) => {
+  let parsedStart = new Date(2000, 1, 0, startTime.slice(0, 2), startTime.slice(3, 5));
+  const parsedEnd = new Date(2000, 1, 0, endTime.slice(0, 2), endTime.slice(3, 5));
+  const increments = [];
+  while (parsedStart.getTime() <= parsedEnd.getTime()) {
+    const minutes = parsedStart.getMinutes().toString();
+    const hours = parsedStart.getHours();
+    increments.push(
+      `${hours > 12 ? (hours - 12).toString() : hours.toString()}:${
+        minutes.length === 1 ? '00' : minutes
+      }`,
+    );
+    parsedStart = new Date(parsedStart.getTime() + 30 * 60000);
+  }
+  return increments;
+};
+
+const prettifyAvails = (userData) => {
+  if (isArray(userData)) {
+    return userData.map((i) => {
+      return prettifyAvails(i);
+    });
+  }
+
+  const { availabilities } = userData;
+  if (!availabilities) {
+    return userData;
+  }
+
+  const parsedAvails = {
+    Sunday: [],
+    Monday: [],
+    Tuesday: [],
+    Wednesday: [],
+    Thursday: [],
+    Friday: [],
+    Saturday: [],
+  };
+  availabilities.forEach(({ dayOfWeek, startTime, endTime }) => {
+    parsedAvails[dayOfWeek].push(...getIncrements(startTime, endTime));
+  });
+  return { ...userData, availabilities: parsedAvails };
+};
+
 module.exports = {
   validateGeneralInfo,
   validateRolesAndSkills,
   validateDUICriminal,
   validateAllUserInfo,
+  prettifyAvails,
 };

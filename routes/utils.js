@@ -99,4 +99,5 @@ module.exports = {
   isPhoneNumber,
   keysToCamel,
   getUsersQuery,
+  isArray,
 };

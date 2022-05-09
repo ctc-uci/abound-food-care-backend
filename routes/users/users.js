@@ -6,6 +6,7 @@ const {
   validateRolesAndSkills,
   validateDUICriminal,
   validateAllUserInfo,
+  prettifyAvails,
 } = require('./usersUtils');
 const updateAvailabilities = require('./availabilityUtils');
 
@@ -17,7 +18,7 @@ userRouter.get('/:userId', async (req, res) => {
     const { userId } = req.params;
     const conditions = 'WHERE users.user_id = $1';
     const user = await pool.query(getUsersQuery(conditions), [userId]);
-    res.status(200).send(keysToCamel(user.rows[0]));
+    res.status(200).send(prettifyAvails(keysToCamel(user.rows[0])));
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -27,7 +28,7 @@ userRouter.get('/:userId', async (req, res) => {
 userRouter.get('/', async (req, res) => {
   try {
     const users = await pool.query(getUsersQuery());
-    res.status(200).send(keysToCamel(users.rows));
+    res.status(200).send(prettifyAvails(keysToCamel(users.rows)));
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -160,7 +161,7 @@ userRouter.post('/', async (req, res) => {
       },
     );
     const userInfo = await updateAvailabilities(availabilities, userId, getUsersQuery);
-    res.status(200).json(keysToCamel(userInfo));
+    res.status(200).json(prettifyAvails(keysToCamel(userInfo)));
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -295,7 +296,7 @@ userRouter.put('/:userId', async (req, res) => {
       },
     );
     const updatedUser = await updateAvailabilities(availabilities, userId, getUsersQuery, true);
-    res.status(200).send(keysToCamel(updatedUser));
+    res.status(200).send(prettifyAvails(keysToCamel(updatedUser)));
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -325,8 +326,8 @@ userRouter.put('/general-info/:userId', async (req, res) => {
         address_zip = $(addressZip),
         address_city = $(addressCity),
         address_state = $(addressState)
-    WHERE user_id = $(userId)
-    RETURNING *;`,
+      WHERE user_id = $(userId)
+      RETURNING *;`,
       {
         organization,
         phone,
@@ -340,7 +341,7 @@ userRouter.put('/general-info/:userId', async (req, res) => {
     );
     const conditions = 'WHERE users.user_id = $1';
     const updatedUser = await pool.query(getUsersQuery(conditions), [userId]);
-    res.status(200).send(keysToCamel(updatedUser.rows[0]));
+    res.status(200).send(prettifyAvails(keysToCamel(updatedUser.rows[0])));
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -352,7 +353,7 @@ userRouter.put('/availability/:userId', async (req, res) => {
     const { userId } = req.params;
     const { availabilities } = req.body;
     const updatedUser = await updateAvailabilities(availabilities, userId, getUsersQuery, true);
-    res.status(200).json(keysToCamel(updatedUser));
+    res.status(200).json(prettifyAvails(keysToCamel(updatedUser)));
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -433,7 +434,7 @@ userRouter.put('/roles-skills/:userId', async (req, res) => {
     );
     const conditions = 'WHERE users.user_id = $1';
     const updatedUser = await pool.query(getUsersQuery(conditions), [userId]);
-    res.status(200).send(keysToCamel(updatedUser.rows[0]));
+    res.status(200).send(prettifyAvails(keysToCamel(updatedUser.rows[0])));
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -471,7 +472,7 @@ userRouter.put('/dui-criminal/:userId', async (req, res) => {
     );
     const conditions = 'WHERE users.user_id = $1';
     const updatedUser = await pool.query(getUsersQuery(conditions), [userId]);
-    res.status(200).send(keysToCamel(updatedUser.rows[0]));
+    res.status(200).send(prettifyAvails(keysToCamel(updatedUser.rows[0])));
   } catch (err) {
     res.status(400).send(err.message);
   }
