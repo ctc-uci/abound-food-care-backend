@@ -25,6 +25,17 @@ waiversRouter.get('/:waiverId', async (req, res) => {
   }
 });
 
+// get waivers by evemt id
+waiversRouter.get('/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const waivers = await pool.query('SELECT * from waivers WHERE event_id = $1', [eventId]);
+    res.status(200).send(keysToCamel(waivers.rows));
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
+
 // create a waiver
 waiversRouter.post('/', async (req, res) => {
   try {
