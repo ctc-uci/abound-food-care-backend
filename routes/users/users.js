@@ -205,6 +205,7 @@ userRouter.put('/:userId', async (req, res) => {
       additionalInformation,
       availabilities,
     } = req.body;
+
     validateAllUserInfo(
       phone,
       addressZip,
@@ -298,6 +299,7 @@ userRouter.put('/:userId', async (req, res) => {
     const updatedUser = await updateAvailabilities(availabilities, userId, getUsersQuery, true);
     res.status(200).send(keysToCamel(updatedUser));
   } catch (err) {
+    console.log(err);
     res.status(400).send(err.message);
   }
 });
