@@ -9,6 +9,7 @@ const volunteerRouter = require('./routes/volunteers/volunteers');
 const availabilityRouter = require('./routes/users/availability');
 const waiversRouter = require('./routes/events/waivers');
 const s3UploadRouter = require('./routes/s3Upload');
+const adminCodeRouter = require('./routes/admins/admin_codes');
 const { authRouter } = require('./routes/auth');
 
 const app = express();
@@ -32,6 +33,7 @@ app.use('/users', userRouter);
 app.use('/availability', availabilityRouter);
 app.use('/waivers', waiversRouter);
 app.use('/s3Upload', s3UploadRouter);
+app.use('/adminCode', adminCodeRouter);
 app.use('/auth', authRouter);
 
 app.listen(PORT, () => {
