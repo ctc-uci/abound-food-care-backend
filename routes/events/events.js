@@ -8,8 +8,47 @@ const eventRouter = express();
 // get all events
 eventRouter.get('/', async (req, res) => {
   try {
-    const conditions = '';
-    const events = await pool.query(getEventsQuery(conditions));
+    const { status, type, pageIndex, pageSize } = req.query;
+    const offset = (pageIndex - 1) * pageSize;
+    const currDate = new Date();
+    let timeConstraint;
+    if (status === 'upcoming') {
+      timeConstraint = `start_datetime >= $(currDate)`;
+    } else if (status === 'past') {
+      timeConstraint = `start_datetime < $(currDate)`;
+    } else {
+      timeConstraint = `TRUE`;
+    }
+    const eventFilter = `
+    FROM events
+    LEFT JOIN
+      (SELECT req.event_id, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
+        FROM event_requirements AS req
+        GROUP BY req.event_id) AS r on r.event_id = events.event_id
+    LEFT JOIN
+      (SELECT waivers.event_id, array_agg(to_jsonb(waivers.*) - 'event_id' ORDER BY waivers.name) AS waivers
+        FROM waivers
+        GROUP BY waivers.event_id) AS waivers on waivers.event_id = events.event_id
+    WHERE
+    $(timeConstraint) AND ($(type) = 'all' OR event_type = $(type))
+  `;
+    const events = await db.query(
+      `SELECT events.*, requirements, waivers.waivers
+      $(eventFilter)
+      ORDER BY start_datetime ASC;
+      LIMIT $(pageSize) OFFSET $(offset);
+      `,
+      {
+        status,
+        timeConstraint,
+        type,
+        pageSize,
+        offset,
+        currDate,
+        eventFilter,
+      },
+    );
+
     res.status(200).json(keysToCamel(events.rows));
   } catch (err) {
     res.status(400).send(err.message);
@@ -19,7 +58,37 @@ eventRouter.get('/', async (req, res) => {
 // Get Total # Of Events
 eventRouter.get('/total', async (req, res) => {
   try {
-    const numEvents = await pool.query('SELECT COUNT(*) FROM events');
+    const { status, type } = req.query;
+    const currDate = new Date();
+    let timeConstraint;
+    if (status === 'upcoming') {
+      timeConstraint = `start_datetime >= $(currDate)`;
+    } else if (status === 'past') {
+      timeConstraint = `start_datetime < $(currDate)`;
+    } else {
+      timeConstraint = `TRUE`;
+    }
+    const numEvents = await db.query(
+      `SELECT COUNT(*)
+      FROM events
+        LEFT JOIN
+          (SELECT req.event_id, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
+            FROM event_requirements AS req
+            GROUP BY req.event_id) AS r on r.event_id = events.event_id
+        LEFT JOIN
+          (SELECT waivers.event_id, array_agg(to_jsonb(waivers.*) - 'event_id' ORDER BY waivers.name) AS waivers
+            FROM waivers
+            GROUP BY waivers.event_id) AS waivers on waivers.event_id = events.event_id
+        WHERE
+        $(timeConstraint) AND ($(type) = 'all' OR event_type = $(type))
+    `,
+      {
+        status,
+        timeConstraint,
+        type,
+        currDate,
+      },
+    );
     res.status(200).json(numEvents.rows[0]);
   } catch (err) {
     res.status(400).json(err);
