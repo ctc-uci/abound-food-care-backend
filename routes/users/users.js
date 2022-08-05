@@ -162,7 +162,6 @@ userRouter.post('/', async (req, res) => {
     const userInfo = await updateAvailabilities(availabilities, userId, getUsersQuery);
     res.status(200).json(keysToCamel(userInfo));
   } catch (err) {
-    console.log(err);
     res.status(400).send(err.message);
   }
 });
@@ -299,7 +298,6 @@ userRouter.put('/:userId', async (req, res) => {
     const updatedUser = await updateAvailabilities(availabilities, userId, getUsersQuery, true);
     res.status(200).send(keysToCamel(updatedUser));
   } catch (err) {
-    console.log(err);
     res.status(400).send(err.message);
   }
 });
