@@ -58,18 +58,20 @@ eventRouter.get('/', async (req, res) => {
 // Get Total # Of Events
 eventRouter.get('/total', async (req, res) => {
   try {
-    const { status, type } = req.query;
+    const { status, type } = req.body;
     const currDate = new Date();
-    let timeConstraint;
+    let timeComparison;
+    let allTimes = `FALSE`;
     if (status === 'upcoming') {
-      timeConstraint = `start_datetime >= $(currDate)`;
+      timeComparison = `>=`;
     } else if (status === 'past') {
-      timeConstraint = `start_datetime < $(currDate)`;
+      timeComparison = `<`;
     } else {
-      timeConstraint = `TRUE`;
+      timeComparison = `<`;
+      allTimes = `TRUE`;
     }
     const numEvents = await db.query(
-      `SELECT COUNT(*)
+      `SELECT *
       FROM events
         LEFT JOIN
           (SELECT req.event_id, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
@@ -80,16 +82,38 @@ eventRouter.get('/total', async (req, res) => {
             FROM waivers
             GROUP BY waivers.event_id) AS waivers on waivers.event_id = events.event_id
         WHERE
-        $(timeConstraint) AND ($(type) = 'all' OR event_type = $(type))
+        ($(allTimes) OR (start_datetime $(timeComparison) $(currDate))) AND ($(type) = 'all' OR event_type = $(type))
     `,
       {
         status,
-        timeConstraint,
+        timeComparison,
+        allTimes,
         type,
         currDate,
       },
     );
-    res.status(200).json(numEvents.rows[0]);
+    // $(timeConstraint) AND
+    // const numEvents = await db.query(
+    //   `SELECT *
+    //   FROM events
+    //     LEFT JOIN
+    //       (SELECT req.event_id, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
+    //         FROM event_requirements AS req
+    //         GROUP BY req.event_id) AS r on r.event_id = events.event_id
+    //     LEFT JOIN
+    //       (SELECT waivers.event_id, array_agg(to_jsonb(waivers.*) - 'event_id' ORDER BY waivers.name) AS waivers
+    //         FROM waivers
+    //         GROUP BY waivers.event_id) AS waivers on waivers.event_id = events.event_id
+    // `,
+    //   {
+    //     status,
+    //     timeConstraint,
+    //     type,
+    //     currDate,
+    //   },
+    // );
+    res.status(200).json({ 0: currDate, 1: numEvents });
+    // res.status(200).json({ msg: 'test' });
   } catch (err) {
     res.status(400).json(err);
   }
