@@ -2,7 +2,6 @@ const crypto = require('crypto');
 
 const express = require('express');
 const { pool } = require('../../server/db');
-// const { keysToCamel } = require('../utils');
 
 const adminCodeRouter = express();
 
@@ -23,9 +22,7 @@ adminCodeRouter.get('/', async (req, res) => {
 adminCodeRouter.get('/code/:adminCode', async (req, res) => {
   try {
     const { adminCode } = req.params;
-    const user = await pool.query('SELECT * FROM admin_codes WHERE admin_codes.code = $1', [
-      adminCode,
-    ]);
+    const user = await pool.query('SELECT * FROM admin_codes WHERE code = $1', [adminCode]);
     res.status(200).send(user.rows);
   } catch (err) {
     res.status(400).send(err.message);
@@ -51,15 +48,12 @@ adminCodeRouter.post('/', async (req, res) => {
 // delete a user
 adminCodeRouter.delete('/:adminCode', async (req, res) => {
   try {
-    const {
-      cookies: { userId },
-    } = req;
     const { adminCode } = req.params;
     const deletedCode = await pool.query(
       `DELETE FROM admin_codes
-      WHERE code = $1 AND user_id = $2
+      WHERE code = $1
       RETURNING *;`,
-      [adminCode, userId],
+      [adminCode],
     );
     res.status(200).send(deletedCode.rows);
   } catch (err) {
