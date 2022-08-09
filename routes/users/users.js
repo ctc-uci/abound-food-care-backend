@@ -204,6 +204,7 @@ userRouter.put('/:userId', async (req, res) => {
       additionalInformation,
       availabilities,
     } = req.body;
+
     validateAllUserInfo(
       phone,
       addressZip,
