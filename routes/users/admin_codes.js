@@ -45,7 +45,6 @@ adminCodeRouter.post('/', async (req, res) => {
   }
 });
 
-// delete a user
 adminCodeRouter.delete('/:adminCode', async (req, res) => {
   try {
     const { adminCode } = req.params;
