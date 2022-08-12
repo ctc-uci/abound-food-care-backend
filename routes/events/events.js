@@ -8,17 +8,20 @@ const eventRouter = express();
 // get all events
 eventRouter.get('/', async (req, res) => {
   try {
-    const { status, type, pageIndex, pageSize } = req.query;
-    const offset = (pageIndex - 1) * pageSize;
-    const currDate = new Date();
-    let timeConstraint;
-    if (status === 'upcoming') {
-      timeConstraint = `start_datetime >= $(currDate)`;
-    } else if (status === 'past') {
-      timeConstraint = `start_datetime < $(currDate)`;
-    } else {
-      timeConstraint = `TRUE`;
-    }
+    const { status, type } = req.query;
+    // const offset = (pageIndex - 1) * pageSize;
+    // const search = req.query.search == null ? '' : req.query.search;
+    const timeComparisonDict = {
+      upcoming: `start_datetime >= NOW()`,
+      past: `start_datetime < NOW()`,
+      all: `-1 = -1`,
+    };
+    const typeDict = {
+      'Food Running': `event_type = 'Food Running'`,
+      Distribution: `event_type = 'Distribution'`,
+      Other: `(event_type != 'Food Running' AND event_type != 'Distribution')`,
+      All: `-1 = -1`,
+    };
     const eventFilter = `
     FROM events
     LEFT JOIN
@@ -29,25 +32,25 @@ eventRouter.get('/', async (req, res) => {
       (SELECT waivers.event_id, array_agg(to_jsonb(waivers.*) - 'event_id' ORDER BY waivers.name) AS waivers
         FROM waivers
         GROUP BY waivers.event_id) AS waivers on waivers.event_id = events.event_id
-    WHERE
-    $(timeConstraint) AND ($(type) = 'all' OR event_type = $(type))
+    WHERE (${timeComparisonDict[status]})
+      AND (${typeDict[type]})
   `;
-    const events = await db.query(
-      `SELECT events.*, requirements, waivers.waivers
-      $(eventFilter)
-      ORDER BY start_datetime ASC;
-      LIMIT $(pageSize) OFFSET $(offset);
-      `,
-      {
-        status,
-        timeConstraint,
-        type,
-        pageSize,
-        offset,
-        currDate,
-        eventFilter,
-      },
-    );
+
+    const events = await db.query(eventFilter);
+    // const events = await db.query(
+    //   `SELECT events.*, requirements, waivers.waivers
+    //   $(eventFilter)
+    //   ORDER BY start_datetime ASC;
+    //   LIMIT $(pageSize) OFFSET $(offset);
+    //   `,
+    //   {
+    //     status,
+    //     type,
+    //     pageSize,
+    //     offset,
+    //     eventFilter,
+    //   },
+    // );
 
     res.status(200).json(keysToCamel(events.rows));
   } catch (err) {
@@ -56,41 +59,37 @@ eventRouter.get('/', async (req, res) => {
 });
 
 // Get Total # Of Events
-eventRouter.get('/total', async (req, res) => {
+// scrapped
+eventRouter.get('/all', async (req, res) => {
+  console.log(req.body);
+  console.log(req.params);
+  console.log(req.query);
   try {
-    const { status, type } = req.body;
-    const currDate = new Date();
-    let timeComparison;
-    let allTimes = `FALSE`;
-    if (status === 'upcoming') {
-      timeComparison = `>=`;
-    } else if (status === 'past') {
-      timeComparison = `<`;
-    } else {
-      timeComparison = `<`;
-      allTimes = `TRUE`;
-    }
+    const { status, type } = req.query;
+    const timeComparisonDict = {
+      upcoming: `start_datetime >= NOW()`,
+      past: `start_datetime < NOW()`,
+      all: `-1 = -1`,
+    };
+    const typeDict = {
+      'Food Running': `event_type = 'Food Running'`,
+      Distribution: `event_type = 'Distribution'`,
+      Other: `(event_type != 'Food Running' AND event_type != 'Distribution')`,
+      All: `-1 = -1`,
+    };
+
+    // ($(allTimes) OR (start_datetime < $(currDate)) AND ($(type) = 'all' OR event_type = $(type))
+    console.log(`SELECT COUNT(*)
+    FROM events
+      WHERE (${timeComparisonDict[status]})
+        AND (${typeDict[type]})
+  `);
     const numEvents = await db.query(
-      `SELECT *
+      `SELECT COUNT(*)
       FROM events
-        LEFT JOIN
-          (SELECT req.event_id, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
-            FROM event_requirements AS req
-            GROUP BY req.event_id) AS r on r.event_id = events.event_id
-        LEFT JOIN
-          (SELECT waivers.event_id, array_agg(to_jsonb(waivers.*) - 'event_id' ORDER BY waivers.name) AS waivers
-            FROM waivers
-            GROUP BY waivers.event_id) AS waivers on waivers.event_id = events.event_id
-        WHERE
-        ($(allTimes) OR (start_datetime $(timeComparison) $(currDate))) AND ($(type) = 'all' OR event_type = $(type))
+        WHERE (${timeComparisonDict[status]})
+          AND (${typeDict[type]})
     `,
-      {
-        status,
-        timeComparison,
-        allTimes,
-        type,
-        currDate,
-      },
     );
     // $(timeConstraint) AND
     // const numEvents = await db.query(
@@ -112,7 +111,7 @@ eventRouter.get('/total', async (req, res) => {
     //     currDate,
     //   },
     // );
-    res.status(200).json({ 0: currDate, 1: numEvents });
+    res.status(200).json(numEvents);
     // res.status(200).json({ msg: 'test' });
   } catch (err) {
     res.status(400).json(err);
