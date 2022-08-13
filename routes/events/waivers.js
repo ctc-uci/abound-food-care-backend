@@ -4,6 +4,7 @@ const archiver = require('archiver');
 const fs = require('fs');
 const path = require('path');
 const { PassThrough } = require('stream');
+const s3Zip = require('s3-zip');
 const { pool, db } = require('../../server/db');
 const { isNumeric, keysToCamel } = require('../utils');
 
@@ -30,53 +31,67 @@ waiversRouter.get('/:waiverId', async (req, res) => {
   }
 });
 
+const multiFilesStream = (s3Bucket, infos) => {
+  // using archiver package to create archive object with zip setting -> level from 0(fast, low compression) to 10(slow, high compression)
+  const archive = archiver('zip', { zlib: { level: 5 } });
+
+  infos.forEach((file) => {
+    // using pass through stream object to wrap the stream from aws s3
+    const passthrough = new PassThrough();
+    s3Bucket
+      .getObject({
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: file.filename,
+      })
+      .createReadStream()
+      .pipe(passthrough);
+    // name parameter is the name of the file that the file needs to be when unzipped.
+    archive.append(passthrough, { name: file.output });
+  });
+  return archive;
+};
+
 waiversRouter.post('/download/:eventId', async (req, res) => {
   try {
     const { name, volunteerData } = req.body;
-    const multiFilesStream = (s3Bucket, infos) => {
-      // using archiver package to create archive object with zip setting -> level from 0(fast, low compression) to 10(slow, high compression)
-      const archive = archiver('zip', { zlib: { level: 5 } });
 
-      infos.forEach((file) => {
-        // using pass through stream object to wrap the stream from aws s3
-        const passthrough = new PassThrough();
-        s3Bucket
-          .getObject({
-            Bucket: process.env.S3_BUCKET_NAME,
-            Key: file.filename,
-          })
-          .createReadStream()
-          .pipe(passthrough);
-        // name parameter is the name of the file that the file needs to be when unzipped.
-        archive.append(passthrough, { name: file.output });
-      });
-      return archive;
-    };
     const s3 = new aws.S3({
       region: process.env.AWS_REGION,
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
       signatureVersion: 'v4',
     });
-    const waiverPaths = volunteerData.map((vol) => ({
-      filename: vol.waiver.split('amazonaws.com/')[1],
-      output: vol.waiverName,
-    }));
-    const mfStream = await multiFilesStream(s3, waiverPaths);
-    const zip = fs.createWriteStream(`${name}-waivers.zip`, { flags: 'w' });
-    mfStream.pipe(zip);
-    mfStream.finalize();
-    console.log('checkpoint 1');
-    res.download(path.join(__dirname, `/../../${name}-waivers.zip`), `${name}-waivers.zip`);
-    console.log('checkpoint 2');
-    console.log('checkpoint 3');
+    // const waiverPaths = volunteerData.map((vol) => ({
+    //   filename: vol.waiver.split('amazonaws.com/')[1],
+    //   output: vol.waiverName,
+    // }));
+
+    s3Zip
+      .archive(
+        { s3, bucket: process.env.S3_BUCKET_NAME },
+        '',
+        volunteerData.map((vol) => vol.waiver.split('amazonaws.com/')[1]),
+        volunteerData.map((vol) => vol.waiverName),
+      )
+      .pipe(res);
+
+    // const mfStream = await multiFilesStream(s3, waiverPaths);
+    // const zip = fs.createWriteStream(`${name}-waivers.zip`, { flags: 'w' });
+    // mfStream.pipe(res, zip);
+    // // mfStream.pipe(res);
+    // mfStream.finalize();
+    // console.log('checkpoint 1');
+    // res.download(path.join(__dirname, `/../../${name}-waivers.zip`), `${name}-waivers.zip`);
+    // // console.log('checkpoint 2');
+    // // console.log('checkpoint 3');
     // const download = Buffer.from(fs.readFileSync(`${name}-waivers.zip`, 'utf8'), 'base64');
-    console.log('checkpoint 4');
+    // // console.log('checkpoint 4');
     // res.end(download);
-    console.log('checkpoint 5');
+    // // console.log('checkpoint 5');
     // fs.unlinkSync(path.join(__dirname, `${name}-waivers.zip`));
-    console.log('checkpoint 6');
+    // // console.log('checkpoint 6');
   } catch (err) {
+    console.log(err.message);
     res.status(400).send(err.message);
   }
 });

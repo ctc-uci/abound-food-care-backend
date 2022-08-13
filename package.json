@@ -38,6 +38,7 @@
     "pg": "^8.7.1",
     "pg-promise": "^10.11.1",
     "prettier": "^2.4.1",
+    "s3-zip": "^3.2.1",
     "stream": "^0.0.2"
   },
   "devDependencies": {
