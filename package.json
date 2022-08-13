@@ -16,7 +16,8 @@
     "*.js": "yarn run eslint"
   },
   "dependencies": {
-    "aws-sdk": "^2.1114.0",
+    "archiver": "^5.3.1",
+    "aws-sdk": "^2.1194.0",
     "circular-json": "^0.5.9",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -29,12 +30,15 @@
     "eslint-plugin-prettier": "^4.0.0",
     "express": "^4.17.1",
     "firebase-admin": "^11.0.0",
+    "fs": "^0.0.1-security",
     "husky": "^7.0.4",
     "node-addon-api": "^4.3.0",
     "nodemon": "^2.0.14",
+    "path": "^0.12.7",
     "pg": "^8.7.1",
     "pg-promise": "^10.11.1",
-    "prettier": "^2.4.1"
+    "prettier": "^2.4.1",
+    "stream": "^0.0.2"
   },
   "devDependencies": {
     "eslint-config-prettier": "^8.3.0",
