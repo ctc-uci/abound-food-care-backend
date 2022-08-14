@@ -1,4 +1,6 @@
 const express = require('express');
+const aws = require('aws-sdk');
+const s3Zip = require('s3-zip');
 const { pool, db } = require('../../server/db');
 const { isNumeric, keysToCamel } = require('../utils');
 
@@ -20,6 +22,34 @@ waiversRouter.get('/:waiverId', async (req, res) => {
     const { waiverId } = req.params;
     const waiver = await pool.query('SELECT * from waivers WHERE waiver_id = $1', [waiverId]);
     res.status(200).send(keysToCamel(waiver.rows[0]));
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
+
+waiversRouter.post('/download', async (req, res) => {
+  try {
+    const { volunteerData } = req.body;
+
+    const s3 = new aws.S3({
+      region: process.env.AWS_REGION,
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      signatureVersion: 'v4',
+    });
+    const waiverPaths = volunteerData.map((vol) => ({
+      filename: vol.waiver.split('amazonaws.com/')[1],
+      output: `${vol.name} - ${vol.waiverName}`,
+    }));
+
+    s3Zip
+      .archive(
+        { s3, bucket: process.env.S3_BUCKET_NAME },
+        '',
+        waiverPaths.map((w) => w.filename),
+        waiverPaths.map((w) => w.output),
+      )
+      .pipe(res);
   } catch (err) {
     res.status(400).send(err.message);
   }

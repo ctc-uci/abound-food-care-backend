@@ -16,7 +16,7 @@
     "*.js": "yarn run eslint"
   },
   "dependencies": {
-    "aws-sdk": "^2.1114.0",
+    "aws-sdk": "^2.1194.0",
     "circular-json": "^0.5.9",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -34,7 +34,8 @@
     "nodemon": "^2.0.14",
     "pg": "^8.7.1",
     "pg-promise": "^10.11.1",
-    "prettier": "^2.4.1"
+    "prettier": "^2.4.1",
+    "s3-zip": "^3.2.1"
   },
   "devDependencies": {
     "eslint-config-prettier": "^8.3.0",
