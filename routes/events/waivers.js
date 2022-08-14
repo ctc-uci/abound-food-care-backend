@@ -27,7 +27,7 @@ waiversRouter.get('/:waiverId', async (req, res) => {
   }
 });
 
-waiversRouter.post('/download/:eventId', async (req, res) => {
+waiversRouter.post('/download', async (req, res) => {
   try {
     const { volunteerData } = req.body;
 
@@ -39,7 +39,7 @@ waiversRouter.post('/download/:eventId', async (req, res) => {
     });
     const waiverPaths = volunteerData.map((vol) => ({
       filename: vol.waiver.split('amazonaws.com/')[1],
-      output: vol.waiverName,
+      output: `${vol.name} - ${vol.waiverName}`,
     }));
 
     s3Zip
