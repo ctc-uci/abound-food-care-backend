@@ -1,4 +1,5 @@
 const express = require('express');
+const Fuse = require('fuse.js');
 const { pool, db } = require('../../server/db');
 const { isNumeric, isZipCode, keysToCamel } = require('../utils');
 const { updateEventRequirements, updateEventWaivers, getEventsQuery } = require('./eventsUtils');
@@ -10,7 +11,7 @@ eventRouter.get('/', async (req, res) => {
   try {
     const { status, type } = req.query;
     // const offset = (pageIndex - 1) * pageSize;
-    // const search = req.query.search == null ? '' : req.query.search;
+    const search = req.query.search == null ? '' : req.query.search;
     const timeComparisonDict = {
       upcoming: `start_datetime >= NOW()`,
       past: `start_datetime < NOW()`,
@@ -23,6 +24,7 @@ eventRouter.get('/', async (req, res) => {
       All: `-1 = -1`,
     };
     const eventFilter = `
+    SELECT *
     FROM events
     LEFT JOIN
       (SELECT req.event_id, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
@@ -36,7 +38,7 @@ eventRouter.get('/', async (req, res) => {
       AND (${typeDict[type]})
   `;
 
-    const events = await db.query(eventFilter);
+    let events = await db.query(eventFilter);
     // const events = await db.query(
     //   `SELECT events.*, requirements, waivers.waivers
     //   $(eventFilter)
@@ -51,8 +53,18 @@ eventRouter.get('/', async (req, res) => {
     //     eventFilter,
     //   },
     // );
+    if (req.query.search) {
+      const searchOptions = {
+        keys: ['name'],
+      };
+      const fuse = new Fuse(events, searchOptions);
+      events = fuse.search(search);
+      events = events.map((searchItem) => {
+        return searchItem.item;
+      });
+    }
 
-    res.status(200).json(keysToCamel(events.rows));
+    res.status(200).json(keysToCamel(events));
   } catch (err) {
     res.status(400).send(err.message);
   }
