@@ -9,6 +9,7 @@ const eventRouter = express();
 // get all events
 eventRouter.get('/', async (req, res) => {
   try {
+    console.log(req.query);
     const { status, type } = req.query;
     // const offset = (pageIndex - 1) * pageSize;
     const search = req.query.search == null ? '' : req.query.search;
@@ -18,7 +19,7 @@ eventRouter.get('/', async (req, res) => {
       all: `-1 = -1`,
     };
     const typeDict = {
-      'Food Running': `event_type = 'Food Running'`,
+      'food running': `event_type = 'Food Running'`,
       distribution: `event_type = 'Distribution'`,
       other: `(event_type != 'Food Running' AND event_type != 'Distribution')`,
       all: `-1 = -1`,
