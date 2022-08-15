@@ -19,9 +19,9 @@ eventRouter.get('/', async (req, res) => {
     };
     const typeDict = {
       'Food Running': `event_type = 'Food Running'`,
-      Distribution: `event_type = 'Distribution'`,
-      Other: `(event_type != 'Food Running' AND event_type != 'Distribution')`,
-      All: `-1 = -1`,
+      distribution: `event_type = 'Distribution'`,
+      other: `(event_type != 'Food Running' AND event_type != 'Distribution')`,
+      all: `-1 = -1`,
     };
     const eventFilter = `
     SELECT *
@@ -36,8 +36,7 @@ eventRouter.get('/', async (req, res) => {
         GROUP BY waivers.event_id) AS waivers on waivers.event_id = events.event_id
     WHERE (${timeComparisonDict[status]})
       AND (${typeDict[type]})
-  `;
-
+    `;
     let events = await db.query(eventFilter);
     // const events = await db.query(
     //   `SELECT events.*, requirements, waivers.waivers
@@ -56,77 +55,14 @@ eventRouter.get('/', async (req, res) => {
     if (req.query.search) {
       const searchOptions = {
         keys: ['name'],
+        threshold: 0.2,
       };
-      const fuse = new Fuse(events, searchOptions);
-      events = fuse.search(search);
-      events = events.map((searchItem) => {
-        return searchItem.item;
-      });
+      events = new Fuse(events, searchOptions).search(search).map((searchItem) => searchItem.item);
     }
 
     res.status(200).json(keysToCamel(events));
   } catch (err) {
     res.status(400).send(err.message);
-  }
-});
-
-// Get Total # Of Events
-// scrapped
-eventRouter.get('/all', async (req, res) => {
-  console.log(req.body);
-  console.log(req.params);
-  console.log(req.query);
-  try {
-    const { status, type } = req.query;
-    const timeComparisonDict = {
-      upcoming: `start_datetime >= NOW()`,
-      past: `start_datetime < NOW()`,
-      all: `-1 = -1`,
-    };
-    const typeDict = {
-      'Food Running': `event_type = 'Food Running'`,
-      Distribution: `event_type = 'Distribution'`,
-      Other: `(event_type != 'Food Running' AND event_type != 'Distribution')`,
-      All: `-1 = -1`,
-    };
-
-    // ($(allTimes) OR (start_datetime < $(currDate)) AND ($(type) = 'all' OR event_type = $(type))
-    console.log(`SELECT COUNT(*)
-    FROM events
-      WHERE (${timeComparisonDict[status]})
-        AND (${typeDict[type]})
-  `);
-    const numEvents = await db.query(
-      `SELECT COUNT(*)
-      FROM events
-        WHERE (${timeComparisonDict[status]})
-          AND (${typeDict[type]})
-    `,
-    );
-    // $(timeConstraint) AND
-    // const numEvents = await db.query(
-    //   `SELECT *
-    //   FROM events
-    //     LEFT JOIN
-    //       (SELECT req.event_id, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
-    //         FROM event_requirements AS req
-    //         GROUP BY req.event_id) AS r on r.event_id = events.event_id
-    //     LEFT JOIN
-    //       (SELECT waivers.event_id, array_agg(to_jsonb(waivers.*) - 'event_id' ORDER BY waivers.name) AS waivers
-    //         FROM waivers
-    //         GROUP BY waivers.event_id) AS waivers on waivers.event_id = events.event_id
-    // `,
-    //   {
-    //     status,
-    //     timeConstraint,
-    //     type,
-    //     currDate,
-    //   },
-    // );
-    res.status(200).json(numEvents);
-    // res.status(200).json({ msg: 'test' });
-  } catch (err) {
-    res.status(400).json(err);
   }
 });
 
