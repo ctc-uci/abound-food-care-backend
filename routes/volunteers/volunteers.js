@@ -1,15 +1,47 @@
 const express = require('express');
+const Fuse = require('fuse.js');
 const { pool } = require('../../server/db');
-const { isNumeric, keysToCamel, getUsersQuery } = require('../utils');
+const { isNumeric, keysToCamel } = require('../utils');
 
 const volunteerRouter = express();
 
 // get all volunteers
 volunteerRouter.get('/', async (req, res) => {
   try {
-    const conditions = `WHERE users.role = 'volunteer'`;
-    const volunteers = await pool.query(getUsersQuery(conditions));
-    res.status(200).json(keysToCamel(volunteers.rows));
+    const { driverOption, ageOption, searchQuery } = req.body;
+    let driverCondition = 'TRUE';
+    let ageCondition = 'TRUE';
+
+    if (driverOption === 'Can Drive') {
+      driverCondition = ' users.can_drive';
+    } else if (driverOption === 'Cannot Drive') {
+      driverCondition = ' NOT users.can_drive';
+    }
+
+    if (ageOption === 'Adult') {
+      ageCondition = `date_part('year', age(users.birthdate)) >= 18`;
+    } else if (ageOption === 'Minor') {
+      ageCondition = `date_part('year', age(users.birthdate)) < 18`;
+    }
+
+    const query = `SELECT users.*, availability.availabilities
+    FROM users
+      LEFT JOIN
+        (SELECT user_id, array_agg(to_jsonb(availability.*) - 'user_id' ORDER BY availability.day_of_week) AS availabilities
+          FROM availability
+          GROUP BY user_id) AS availability on availability.user_id = users.user_id
+    WHERE users.role = 'volunteer' AND ${driverCondition} AND ${ageCondition}`;
+
+    let { rows: volunteers } = await pool.query(query);
+    if (searchQuery !== '') {
+      const options = {
+        keys: ['first_name', 'last_name', 'email', 'phone', 'address_city', 'address_state'],
+      };
+      const fuse = new Fuse(volunteers, options);
+      volunteers = fuse.search(searchQuery).map((result) => result.item);
+    }
+
+    res.status(200).json(keysToCamel(volunteers));
   } catch (err) {
     res.status(400).json(err.message);
   }
