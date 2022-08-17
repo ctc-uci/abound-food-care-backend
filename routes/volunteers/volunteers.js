@@ -8,9 +8,10 @@ const volunteerRouter = express();
 // get all volunteers
 volunteerRouter.get('/', async (req, res) => {
   try {
-    const { driverOption, ageOption, searchQuery } = req.body;
+    const { driverOption, ageOption, eventInterest, searchQuery } = req.query;
     let driverCondition = 'TRUE';
     let ageCondition = 'TRUE';
+    let eventCondition = 'TRUE';
 
     if (driverOption === 'Can Drive') {
       driverCondition = ' users.can_drive';
@@ -24,21 +25,27 @@ volunteerRouter.get('/', async (req, res) => {
       ageCondition = `date_part('year', age(users.birthdate)) < 18`;
     }
 
+    if (eventInterest === 'Distributions') {
+      eventCondition = ' users.distribution_interest';
+    } else if (driverOption === 'Food Running') {
+      eventCondition = ' users.food_runs_interest';
+    }
+
     const query = `SELECT users.*, availability.availabilities
     FROM users
       LEFT JOIN
         (SELECT user_id, array_agg(to_jsonb(availability.*) - 'user_id' ORDER BY availability.day_of_week) AS availabilities
           FROM availability
           GROUP BY user_id) AS availability on availability.user_id = users.user_id
-    WHERE users.role = 'volunteer' AND ${driverCondition} AND ${ageCondition}`;
+    WHERE users.role = 'volunteer' AND ${driverCondition} AND ${ageCondition} AND ${eventCondition}`;
 
     let { rows: volunteers } = await pool.query(query);
-    if (searchQuery !== '') {
+    if (searchQuery) {
       const options = {
         keys: ['first_name', 'last_name', 'email', 'phone', 'address_city', 'address_state'],
+        threshold: 0.2,
       };
-      const fuse = new Fuse(volunteers, options);
-      volunteers = fuse.search(searchQuery).map((result) => result.item);
+      volunteers = new Fuse(volunteers, options).search(searchQuery).map((result) => result.item);
     }
 
     res.status(200).json(keysToCamel(volunteers));
