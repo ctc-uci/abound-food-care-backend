@@ -28,13 +28,13 @@ eventRouter.get('/', async (req, res) => {
     SELECT *
     FROM events
     LEFT JOIN
-      (SELECT req.event_id, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
+      (SELECT req.event_id AS eid, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
         FROM event_requirements AS req
-        GROUP BY req.event_id) AS r on r.event_id = events.event_id
+        GROUP BY req.event_id) AS r on r.eid = events.event_id
     LEFT JOIN
-      (SELECT waivers.event_id, array_agg(to_jsonb(waivers.*) - 'event_id' ORDER BY waivers.name) AS waivers
+      (SELECT waivers.event_id AS eid, array_agg(to_jsonb(waivers.*) - 'event_id' ORDER BY waivers.name) AS waivers
         FROM waivers
-        GROUP BY waivers.event_id) AS waivers on waivers.event_id = events.event_id
+        GROUP BY waivers.event_id) AS waivers on waivers.eid = events.event_id
     WHERE (${timeComparisonDict[status]})
       AND (${typeDict[type]})
     `;
