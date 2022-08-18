@@ -16,23 +16,26 @@
     "*.js": "yarn run eslint"
   },
   "dependencies": {
-    "aws-sdk": "^2.1114.0",
+    "aws-sdk": "^2.1194.0",
     "circular-json": "^0.5.9",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
+    "crypto-random-string": "^5.0.0",
     "dotenv": "^10.0.0",
     "eslint": "^8.2.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-plugin-import": "^2.25.2",
     "eslint-plugin-prettier": "^4.0.0",
     "express": "^4.17.1",
-    "fuse.js": "^6.6.2",
+    "firebase-admin": "^11.0.0",
     "husky": "^7.0.4",
     "node-addon-api": "^4.3.0",
     "nodemon": "^2.0.14",
     "pg": "^8.7.1",
     "pg-promise": "^10.11.1",
-    "prettier": "^2.4.1"
+    "prettier": "^2.4.1",
+    "s3-zip": "^3.2.1"
   },
   "devDependencies": {
     "eslint-config-prettier": "^8.3.0",
