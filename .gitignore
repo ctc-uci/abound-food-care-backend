@@ -107,3 +107,6 @@ dist
 
 # Firebase SDK
 firebase-adminsdk.json
+
+# process env
+process.env
