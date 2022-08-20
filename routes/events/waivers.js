@@ -75,6 +75,30 @@ waiversRouter.post('/', async (req, res) => {
   }
 });
 
+// create a waiver (volunteer)
+waiversRouter.post('/volunteer', async (req, res) => {
+  try {
+    const {
+      body: { name, link, eventId },
+      cookies: { userId },
+    } = req;
+    isNumeric(eventId, 'Event Id is not a number');
+    const uploadDate = new Date();
+    const addWaiver = await db.query(
+      `INSERT INTO waivers
+      (name, link, event_id, upload_date, user_id)
+      VALUES
+      ($(name), $(link), $(eventId), $(uploadDate), $(userId))
+      RETURNING *`,
+      { name, link, eventId, uploadDate, userId },
+    );
+    res.status(200).send(keysToCamel(addWaiver[0]));
+  } catch (err) {
+    console.log(err);
+    res.status(400).send(err.message);
+  }
+});
+
 // update a waiver
 waiversRouter.put('/:waiverId', async (req, res) => {
   try {
