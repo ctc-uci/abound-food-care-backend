@@ -94,7 +94,6 @@ waiversRouter.post('/volunteer', async (req, res) => {
     );
     res.status(200).send(keysToCamel(addWaiver[0]));
   } catch (err) {
-    console.log(err);
     res.status(400).send(err.message);
   }
 });
