@@ -1,8 +1,7 @@
 const express = require('express');
-const aws = require('aws-sdk');
-const s3Zip = require('s3-zip');
 const { pool, db } = require('../../server/db');
 const { isNumeric, keysToCamel } = require('../utils');
+const { downloadWaivers } = require('./waiversUtils');
 
 const waiversRouter = express();
 
@@ -27,29 +26,56 @@ waiversRouter.get('/:waiverId', async (req, res) => {
   }
 });
 
+// download all waivers for an event
+waiversRouter.get('/event/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { rows: waiverInfo } = await pool.query(
+      'SELECT * from waivers WHERE event_id = $1 AND user_id is NULL',
+      [eventId],
+    );
+
+    downloadWaivers(
+      res,
+      waiverInfo.map((w) => w.link.split('amazonaws.com/')[1]),
+      waiverInfo.map((w) => w.name),
+    );
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
+
+// delete all of a specified user's waivers associated with an event
+waiversRouter.delete('/:userId/:eventId', async (req, res) => {
+  try {
+    const { userId, eventId } = req.params;
+    const deletedWaiver = await pool.query(
+      `DELETE FROM waivers
+      WHERE user_id = $1
+      AND event_id = $2
+      RETURNING *;`,
+      [userId, eventId],
+    );
+    res.status(200).send(keysToCamel(deletedWaiver.rows[0]));
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
+
 waiversRouter.post('/download', async (req, res) => {
   try {
     const { volunteerData } = req.body;
 
-    const s3 = new aws.S3({
-      region: process.env.AWS_REGION,
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      signatureVersion: 'v4',
-    });
     const waiverPaths = volunteerData.map((vol) => ({
       filename: vol.waiver.split('amazonaws.com/')[1],
       output: `${vol.name} - ${vol.waiverName}`,
     }));
 
-    s3Zip
-      .archive(
-        { s3, bucket: process.env.S3_BUCKET_NAME },
-        '',
-        waiverPaths.map((w) => w.filename),
-        waiverPaths.map((w) => w.output),
-      )
-      .pipe(res);
+    downloadWaivers(
+      res,
+      waiverPaths.map((w) => w.filename),
+      waiverPaths.map((w) => w.output),
+    );
   } catch (err) {
     res.status(400).send(err.message);
   }
@@ -60,14 +86,15 @@ waiversRouter.post('/', async (req, res) => {
   try {
     const { name, link, eventId, notes } = req.body;
     isNumeric(eventId, 'Event Id is not a number');
+    const uploadDate = new Date();
     const addWaiver = await db.query(
       `INSERT INTO waivers (
-        name, link, event_id
+        name, link, event_idm, upload_date
         ${notes ? ', notes' : ''})
-      VALUES ($(name), $(link), $(eventId)
+      VALUES ($(name), $(link), $(eventId), $(uploadDate)
         ${notes ? ', $(notes)' : ''})
       RETURNING *`,
-      { name, link, eventId, notes },
+      { name, link, eventId, uploadDate, notes },
     );
     res.status(200).send(keysToCamel(addWaiver[0]));
   } catch (err) {
