@@ -68,6 +68,41 @@ volunteerRouter.get('/total', async (req, res) => {
   }
 });
 
+volunteerRouter.get('/available', async (req, res) => {
+  try {
+    // console.log('getting availability');
+    const resData = {};
+    // assume startTime and endTime is a timestamp
+    const volunteers = await pool.query(
+      `SELECT
+        availability.user_id,
+        availability.day_of_week,
+        availability.start_time,
+        availability.end_time,
+        users.user_id,
+        users.first_name,
+        users.last_name,
+        users.can_drive
+      FROM users
+      INNER JOIN availability
+      ON users.user_id = availability.user_id`,
+      [],
+    );
+    // console.log(volunteers);
+    volunteers.rows.forEach((volunteerHour) => {
+      const startTime = volunteerHour.start_time.substring(0, 5);
+      const endTime = volunteerHour.end_time.substring(0, 5);
+      const day = volunteerHour.day_of_week;
+
+      resData[`${day} ${startTime} to ${endTime}`] =
+        (resData[`${day} ${startTime} to ${endTime}`] ?? 0) + 1;
+    });
+    res.status(200).json(resData);
+  } catch (err) {
+    res.status(400).json(err.message);
+  }
+});
+
 // get # of events that volunteer is signed up for
 volunteerRouter.get('/:userId/total-events', async (req, res) => {
   try {
@@ -171,26 +206,6 @@ volunteerRouter.get('/events/:eventId', async (req, res) => {
 //     res.status(500).json(err);
 //   }
 // });
-
-volunteerRouter.get('/available', async (req, res) => {
-  try {
-    const resData = {};
-    // assume startTime and endTime is a timestamp
-    const volunteers = await pool.query('SELECT * FROM availability');
-    volunteers.rows.forEach((volunteerHour) => {
-      const startTime = volunteerHour.start_time.substring(0, 5);
-      const endTime = volunteerHour.end_time.substring(0, 5);
-      const day = volunteerHour.day_of_week;
-
-      resData[`${day} ${startTime} to ${endTime}`] =
-        (resData[`${day} ${startTime} to ${endTime}`] ?? 0) + 1;
-    });
-
-    res.status(200).json(resData);
-  } catch (err) {
-    res.status(400).json(err.message);
-  }
-});
 
 // get number of volunteers at specific event
 // volunteerRouter.get('/:eventId', async (req, res) => {
