@@ -26,8 +26,23 @@ waiversRouter.get('/:waiverId', async (req, res) => {
   }
 });
 
-// download all waivers for an event
+// get all waivers for an event
 waiversRouter.get('/event/:eventId', async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { rows: waiverInfo } = await pool.query(
+      'SELECT * from waivers WHERE event_id = $1 AND user_id is NULL',
+      [eventId],
+    );
+
+    res.status(200).send(keysToCamel(waiverInfo));
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
+
+// download all waivers for an event
+waiversRouter.get('/event/download/:eventId', async (req, res) => {
   try {
     const { eventId } = req.params;
     const { rows: waiverInfo } = await pool.query(
