@@ -37,7 +37,8 @@ volunteerRouter.get('/', async (req, res) => {
         (SELECT user_id, array_agg(to_jsonb(availability.*) - 'user_id' ORDER BY availability.day_of_week) AS availabilities
           FROM availability
           GROUP BY user_id) AS availability on availability.user_id = users.user_id
-    WHERE users.role = 'volunteer' AND ${driverCondition} AND ${ageCondition} AND ${eventCondition}`;
+    WHERE users.role = 'volunteer' AND ${driverCondition} AND ${ageCondition} AND ${eventCondition}
+    ORDER BY users.first_name, users.last_name`;
 
     let { rows: volunteers } = await pool.query(query);
     if (searchQuery) {
@@ -70,23 +71,23 @@ volunteerRouter.get('/total', async (req, res) => {
 
 volunteerRouter.get('/available', async (req, res) => {
   try {
-    console.log(req.body);
-    console.log(req.query);
-    console.log(req.params);
     const { driverOption, eventInterest, searchQuery } = req.query;
+
+    let driverCondition = 'TRUE';
     let eventCondition = 'TRUE';
 
-    const driverConditions = {
-      'Can Drive': ' users.can_drive',
-      'Cannot Drive': ' NOT users.can_drive',
-    };
-    const driverCondition = driverConditions[driverOption];
+    if (driverOption === 'Can Drive') {
+      driverCondition = ' users.can_drive';
+    } else if (driverOption === 'Cannot Drive') {
+      driverCondition = ' NOT users.can_drive';
+    }
 
     if (eventInterest === 'Distributions') {
       eventCondition = ' users.distribution_interest';
     } else if (driverOption === 'Food Running') {
       eventCondition = ' users.food_runs_interest';
     }
+
     const resData = {};
     // assume startTime and endTime is a timestamp
     let { rows: volunteers } = await pool.query(
@@ -101,12 +102,9 @@ volunteerRouter.get('/available', async (req, res) => {
         users.can_drive
       FROM users
       INNER JOIN availability
-      ON users.user_id = availability.user_id
-      WHERE users.role = 'volunteer' AND ${driverCondition} AND ${eventCondition}`,
+      ON users.user_id = availability.user_id AND ${driverCondition} AND ${eventCondition}`,
       [],
     );
-
-    // console.log(volunteers);
 
     if (searchQuery) {
       const options = {
@@ -115,12 +113,7 @@ volunteerRouter.get('/available', async (req, res) => {
       };
       volunteers = new Fuse(volunteers, options).search(searchQuery).map((result) => result.item);
     }
-    // console.log(driverOption, searchQuery, showNames);
-    // if (showNames) {
-    //   console.log(volunteers);
-    //   res.status(200).json(volunteers);
-    // } else {
-    // console.log(volunteers);
+
     volunteers.forEach((volunteerHour) => {
       const startTime = volunteerHour.start_time.substring(0, 5);
       const endTime = volunteerHour.end_time.substring(0, 5);
@@ -130,7 +123,6 @@ volunteerRouter.get('/available', async (req, res) => {
         (resData[`${day} ${startTime} to ${endTime}`] ?? 0) + 1;
     });
     res.status(200).json(resData);
-    // }
   } catch (err) {
     res.status(400).json(err.message);
   }
