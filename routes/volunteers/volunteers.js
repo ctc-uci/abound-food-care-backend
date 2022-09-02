@@ -70,10 +70,26 @@ volunteerRouter.get('/total', async (req, res) => {
 
 volunteerRouter.get('/available', async (req, res) => {
   try {
-    // console.log('getting availability');
+    console.log(req.body);
+    console.log(req.query);
+    console.log(req.params);
+    const { driverOption, eventInterest, searchQuery } = req.query;
+    let eventCondition = 'TRUE';
+
+    const driverConditions = {
+      'Can Drive': ' users.can_drive',
+      'Cannot Drive': ' NOT users.can_drive',
+    };
+    const driverCondition = driverConditions[driverOption];
+
+    if (eventInterest === 'Distributions') {
+      eventCondition = ' users.distribution_interest';
+    } else if (driverOption === 'Food Running') {
+      eventCondition = ' users.food_runs_interest';
+    }
     const resData = {};
     // assume startTime and endTime is a timestamp
-    const volunteers = await pool.query(
+    let { rows: volunteers } = await pool.query(
       `SELECT
         availability.user_id,
         availability.day_of_week,
@@ -85,11 +101,27 @@ volunteerRouter.get('/available', async (req, res) => {
         users.can_drive
       FROM users
       INNER JOIN availability
-      ON users.user_id = availability.user_id`,
+      ON users.user_id = availability.user_id
+      WHERE users.role = 'volunteer' AND ${driverCondition} AND ${eventCondition}`,
       [],
     );
+
     // console.log(volunteers);
-    volunteers.rows.forEach((volunteerHour) => {
+
+    if (searchQuery) {
+      const options = {
+        keys: ['first_name', 'last_name', 'email', 'phone', 'address_city', 'address_state'],
+        threshold: 0.2,
+      };
+      volunteers = new Fuse(volunteers, options).search(searchQuery).map((result) => result.item);
+    }
+    // console.log(driverOption, searchQuery, showNames);
+    // if (showNames) {
+    //   console.log(volunteers);
+    //   res.status(200).json(volunteers);
+    // } else {
+    // console.log(volunteers);
+    volunteers.forEach((volunteerHour) => {
       const startTime = volunteerHour.start_time.substring(0, 5);
       const endTime = volunteerHour.end_time.substring(0, 5);
       const day = volunteerHour.day_of_week;
@@ -98,6 +130,7 @@ volunteerRouter.get('/available', async (req, res) => {
         (resData[`${day} ${startTime} to ${endTime}`] ?? 0) + 1;
     });
     res.status(200).json(resData);
+    // }
   } catch (err) {
     res.status(400).json(err.message);
   }
