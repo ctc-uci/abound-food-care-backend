@@ -9,27 +9,26 @@ const volunteerRouter = express();
 volunteerRouter.get('/', async (req, res) => {
   try {
     const { driverOption, ageOption, eventInterest, searchQuery } = req.query;
-    let driverCondition = 'TRUE';
-    let ageCondition = 'TRUE';
-    let eventCondition = 'TRUE';
+    const driverOptions = {
+      All: 'TRUE',
+      'Can Drive': 'users.can_drive',
+      'Cannot Drive': 'NOT users.can_drive',
+    };
+    const driverCondition = driverOptions[driverOption];
 
-    if (driverOption === 'Can Drive') {
-      driverCondition = ' users.can_drive';
-    } else if (driverOption === 'Cannot Drive') {
-      driverCondition = ' NOT users.can_drive';
-    }
+    const ageOptions = {
+      All: 'TRUE',
+      Adult: `date_part('year', age(users.birthdate)) >= 18`,
+      Minor: `date_part('year', age(users.birthdate)) < 18`,
+    };
+    const ageCondition = ageOptions[ageOption];
 
-    if (ageOption === 'Adult') {
-      ageCondition = `date_part('year', age(users.birthdate)) >= 18`;
-    } else if (ageOption === 'Minor') {
-      ageCondition = `date_part('year', age(users.birthdate)) < 18`;
-    }
-
-    if (eventInterest === 'Distributions') {
-      eventCondition = ' users.distribution_interest';
-    } else if (driverOption === 'Food Running') {
-      eventCondition = ' users.food_runs_interest';
-    }
+    const eventOptions = {
+      All: 'TRUE',
+      Distributions: 'users.distribution_interest',
+      'Food Running': 'users.food_runs_interest',
+    };
+    const eventCondition = eventOptions[eventInterest];
 
     const query = `SELECT users.*, availability.availabilities
     FROM users
@@ -40,16 +39,19 @@ volunteerRouter.get('/', async (req, res) => {
     WHERE users.role = 'volunteer' AND ${driverCondition} AND ${ageCondition} AND ${eventCondition}
     ORDER BY users.first_name, users.last_name`;
 
-    let { rows: volunteers } = await pool.query(query);
+    const { rows: volunteers } = await pool.query(query);
     if (searchQuery) {
       const options = {
         keys: ['first_name', 'last_name', 'email', 'phone', 'address_city', 'address_state'],
         threshold: 0.2,
       };
-      volunteers = new Fuse(volunteers, options).search(searchQuery).map((result) => result.item);
+      const searchVolunteers = new Fuse(volunteers, options)
+        .search(searchQuery)
+        .map((result) => result.item);
+      res.status(200).json(keysToCamel(searchVolunteers));
+    } else {
+      res.status(200).json(keysToCamel(volunteers));
     }
-
-    res.status(200).json(keysToCamel(volunteers));
   } catch (err) {
     res.status(400).json(err.message);
   }
@@ -73,24 +75,23 @@ volunteerRouter.get('/available', async (req, res) => {
   try {
     const { driverOption, eventInterest, searchQuery } = req.query;
 
-    let driverCondition = 'TRUE';
-    let eventCondition = 'TRUE';
+    const driverOptions = {
+      All: 'TRUE',
+      'Can Drive': 'users.can_drive',
+      'Cannot Drive': 'NOT users.can_drive',
+    };
+    const driverCondition = driverOptions[driverOption];
 
-    if (driverOption === 'Can Drive') {
-      driverCondition = ' users.can_drive';
-    } else if (driverOption === 'Cannot Drive') {
-      driverCondition = ' NOT users.can_drive';
-    }
-
-    if (eventInterest === 'Distributions') {
-      eventCondition = ' users.distribution_interest';
-    } else if (driverOption === 'Food Running') {
-      eventCondition = ' users.food_runs_interest';
-    }
+    const eventOptions = {
+      All: 'TRUE',
+      Distributions: 'users.distribution_interest',
+      'Food Running': 'users.food_runs_interest',
+    };
+    const eventCondition = eventOptions[eventInterest];
 
     const resData = {};
     // assume startTime and endTime is a timestamp
-    let { rows: volunteers } = await pool.query(
+    const { rows: volunteers } = await pool.query(
       `SELECT
         availability.user_id,
         availability.day_of_week,
@@ -111,17 +112,28 @@ volunteerRouter.get('/available', async (req, res) => {
         keys: ['first_name', 'last_name', 'email', 'phone', 'address_city', 'address_state'],
         threshold: 0.2,
       };
-      volunteers = new Fuse(volunteers, options).search(searchQuery).map((result) => result.item);
+      const searchedVolunteers = new Fuse(volunteers, options)
+        .search(searchQuery)
+        .map((result) => result.item);
+      searchedVolunteers.forEach((volunteerHour) => {
+        const startTime = volunteerHour.start_time.substring(0, 5);
+        const endTime = volunteerHour.end_time.substring(0, 5);
+        const day = volunteerHour.day_of_week;
+
+        resData[`${day} ${startTime} to ${endTime}`] =
+          (resData[`${day} ${startTime} to ${endTime}`] ?? 0) + 1;
+      });
+    } else {
+      volunteers.forEach((volunteerHour) => {
+        const startTime = volunteerHour.start_time.substring(0, 5);
+        const endTime = volunteerHour.end_time.substring(0, 5);
+        const day = volunteerHour.day_of_week;
+
+        resData[`${day} ${startTime} to ${endTime}`] =
+          (resData[`${day} ${startTime} to ${endTime}`] ?? 0) + 1;
+      });
     }
 
-    volunteers.forEach((volunteerHour) => {
-      const startTime = volunteerHour.start_time.substring(0, 5);
-      const endTime = volunteerHour.end_time.substring(0, 5);
-      const day = volunteerHour.day_of_week;
-
-      resData[`${day} ${startTime} to ${endTime}`] =
-        (resData[`${day} ${startTime} to ${endTime}`] ?? 0) + 1;
-    });
     res.status(200).json(resData);
   } catch (err) {
     res.status(400).json(err.message);
