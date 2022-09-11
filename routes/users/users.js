@@ -223,6 +223,7 @@ userRouter.put('/:userId', async (req, res) => {
       movingWarehouseExperience,
       foodServiceIndustryKnowledge,
     );
+    const vehicleTypeValue = vehicleType === 'NULL' ? undefined : vehicleType;
     // sort languages so will always be in alphabetical order when retrieved
     languages.sort();
     await db.query(
@@ -250,7 +251,7 @@ userRouter.put('/:userId', async (req, res) => {
         ${distributionInterest ? 'distribution_interest = $(distributionInterest), ' : ''}
         can_drive = $(canDrive),
         willing_to_drive = $(willingToDrive),
-        ${vehicleType ? 'vehicle_type = $(vehicleType), ' : ''}
+        ${vehicleType ? 'vehicle_type = $(vehicleTypeValue), ' : ''}
         ${distance ? 'distance = $(distance), ' : ''}
         first_aid_training = $(firstAidTraining),
         serve_safe_knowledge = $(serveSafeKnowledge),
@@ -283,7 +284,7 @@ userRouter.put('/:userId', async (req, res) => {
         distributionInterest,
         canDrive,
         willingToDrive,
-        vehicleType,
+        vehicleTypeValue,
         distance,
         firstAidTraining,
         serveSafeKnowledge,
