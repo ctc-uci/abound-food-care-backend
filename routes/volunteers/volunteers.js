@@ -1,15 +1,57 @@
 const express = require('express');
+const Fuse = require('fuse.js');
 const { pool } = require('../../server/db');
-const { isNumeric, keysToCamel, getUsersQuery } = require('../utils');
+const { isNumeric, keysToCamel } = require('../utils');
 
 const volunteerRouter = express();
 
 // get all volunteers
 volunteerRouter.get('/', async (req, res) => {
   try {
-    const conditions = `WHERE users.role = 'volunteer'`;
-    const volunteers = await pool.query(getUsersQuery(conditions));
-    res.status(200).json(keysToCamel(volunteers.rows));
+    const { driverOption, ageOption, eventInterest, searchQuery } = req.query;
+    const driverOptions = {
+      All: 'TRUE',
+      'Can Drive': 'users.can_drive',
+      'Cannot Drive': 'NOT users.can_drive',
+    };
+    const driverCondition = driverOptions[driverOption];
+
+    const ageOptions = {
+      All: 'TRUE',
+      Adult: `date_part('year', age(users.birthdate)) >= 18`,
+      Minor: `date_part('year', age(users.birthdate)) < 18`,
+    };
+    const ageCondition = ageOptions[ageOption];
+
+    const eventOptions = {
+      All: 'TRUE',
+      Distributions: 'users.distribution_interest',
+      'Food Running': 'users.food_runs_interest',
+    };
+    const eventCondition = eventOptions[eventInterest];
+
+    const query = `SELECT users.*, availability.availabilities
+    FROM users
+      LEFT JOIN
+        (SELECT user_id, array_agg(to_jsonb(availability.*) - 'user_id' ORDER BY availability.day_of_week) AS availabilities
+          FROM availability
+          GROUP BY user_id) AS availability on availability.user_id = users.user_id
+    WHERE users.role = 'volunteer' AND ${driverCondition} AND ${ageCondition} AND ${eventCondition}
+    ORDER BY users.first_name, users.last_name`;
+
+    const { rows: volunteers } = await pool.query(query);
+    if (searchQuery) {
+      const options = {
+        keys: ['first_name', 'last_name', 'email', 'phone', 'address_city', 'address_state'],
+        threshold: 0.2,
+      };
+      const searchVolunteers = new Fuse(volunteers, options)
+        .search(searchQuery)
+        .map((result) => result.item);
+      res.status(200).json(keysToCamel(searchVolunteers));
+    } else {
+      res.status(200).json(keysToCamel(volunteers));
+    }
   } catch (err) {
     res.status(400).json(err.message);
   }
@@ -26,6 +68,75 @@ volunteerRouter.get('/total', async (req, res) => {
     res.status(200).json(numVolunteers.rows[0]);
   } catch (err) {
     res.status(400).json(err);
+  }
+});
+
+volunteerRouter.get('/available', async (req, res) => {
+  try {
+    const { driverOption, eventInterest, searchQuery } = req.query;
+
+    const driverOptions = {
+      All: 'TRUE',
+      'Can Drive': 'users.can_drive',
+      'Cannot Drive': 'NOT users.can_drive',
+    };
+    const driverCondition = driverOptions[driverOption];
+
+    const eventOptions = {
+      All: 'TRUE',
+      Distributions: 'users.distribution_interest',
+      'Food Running': 'users.food_runs_interest',
+    };
+    const eventCondition = eventOptions[eventInterest];
+
+    const resData = {};
+    // assume startTime and endTime is a timestamp
+    const { rows: volunteers } = await pool.query(
+      `SELECT
+        availability.user_id,
+        availability.day_of_week,
+        availability.start_time,
+        availability.end_time,
+        users.user_id,
+        users.first_name,
+        users.last_name,
+        users.can_drive
+      FROM users
+      INNER JOIN availability
+      ON users.user_id = availability.user_id AND ${driverCondition} AND ${eventCondition}`,
+      [],
+    );
+
+    if (searchQuery) {
+      const options = {
+        keys: ['first_name', 'last_name', 'email', 'phone', 'address_city', 'address_state'],
+        threshold: 0.2,
+      };
+      const searchedVolunteers = new Fuse(volunteers, options)
+        .search(searchQuery)
+        .map((result) => result.item);
+      searchedVolunteers.forEach((volunteerHour) => {
+        const startTime = volunteerHour.start_time.substring(0, 5);
+        const endTime = volunteerHour.end_time.substring(0, 5);
+        const day = volunteerHour.day_of_week;
+
+        resData[`${day} ${startTime} to ${endTime}`] =
+          (resData[`${day} ${startTime} to ${endTime}`] ?? 0) + 1;
+      });
+    } else {
+      volunteers.forEach((volunteerHour) => {
+        const startTime = volunteerHour.start_time.substring(0, 5);
+        const endTime = volunteerHour.end_time.substring(0, 5);
+        const day = volunteerHour.day_of_week;
+
+        resData[`${day} ${startTime} to ${endTime}`] =
+          (resData[`${day} ${startTime} to ${endTime}`] ?? 0) + 1;
+      });
+    }
+
+    res.status(200).json(resData);
+  } catch (err) {
+    res.status(400).json(err.message);
   }
 });
 
@@ -132,26 +243,6 @@ volunteerRouter.get('/events/:eventId', async (req, res) => {
 //     res.status(500).json(err);
 //   }
 // });
-
-volunteerRouter.get('/available', async (req, res) => {
-  try {
-    const resData = {};
-    // assume startTime and endTime is a timestamp
-    const volunteers = await pool.query('SELECT * FROM availability');
-    volunteers.rows.forEach((volunteerHour) => {
-      const startTime = volunteerHour.start_time.substring(0, 5);
-      const endTime = volunteerHour.end_time.substring(0, 5);
-      const day = volunteerHour.day_of_week;
-
-      resData[`${day} ${startTime} to ${endTime}`] =
-        (resData[`${day} ${startTime} to ${endTime}`] ?? 0) + 1;
-    });
-
-    res.status(200).json(resData);
-  } catch (err) {
-    res.status(400).json(err.message);
-  }
-});
 
 // get number of volunteers at specific event
 // volunteerRouter.get('/:eventId', async (req, res) => {
