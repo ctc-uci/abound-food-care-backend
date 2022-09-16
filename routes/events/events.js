@@ -9,10 +9,9 @@ const eventRouter = express();
 // get all events
 eventRouter.get('/', async (req, res) => {
   try {
-    console.log(req.query);
     const { status, type } = req.query;
     // const offset = (pageIndex - 1) * pageSize;
-    const search = req.query.search == null ? '' : req.query.search;
+    const search = req.query.searchInput == null ? '' : req.query.searchInput;
     const timeComparisonDict = {
       upcoming: `start_datetime >= NOW()`,
       past: `start_datetime < NOW()`,
@@ -53,7 +52,8 @@ eventRouter.get('/', async (req, res) => {
     //     eventFilter,
     //   },
     // );
-    if (req.query.search) {
+
+    if (req.query.searchInput) {
       const searchOptions = {
         keys: ['name'],
         threshold: 0.2,
