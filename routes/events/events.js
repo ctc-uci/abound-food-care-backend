@@ -18,7 +18,7 @@ eventRouter.get('/', async (req, res) => {
       all: `-1 = -1`,
     };
     const typeDict = {
-      'food running': `event_type = 'Food Running'`,
+      food: `event_type = 'Food Running'`,
       distribution: `event_type = 'Distribution'`,
       other: `(event_type != 'Food Running' AND event_type != 'Distribution')`,
       all: `-1 = -1`,
