@@ -26,6 +26,26 @@ waiversRouter.get('/:waiverId', async (req, res) => {
   }
 });
 
+// get all waivers for a user
+waiversRouter.get('/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { rows: waiverInfo } = await pool.query(
+      `SELECT waivers.*, events.event_info from waivers
+      LEFT JOIN
+      (SELECT events.event_id, array_agg(to_jsonb(events.*) - 'event_id' ORDER BY events.name) AS event_info
+        FROM events
+        GROUP BY events.event_id) AS events on waivers.event_id = events.event_id
+      WHERE waivers.user_id = $1`,
+      [userId],
+    );
+
+    res.status(200).send(keysToCamel(waiverInfo));
+  } catch (err) {
+    res.status(400).send(err.message);
+  }
+});
+
 // get all waivers for an event
 waiversRouter.get('/event/:eventId', async (req, res) => {
   try {
