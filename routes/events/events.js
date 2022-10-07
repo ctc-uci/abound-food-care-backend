@@ -1,4 +1,5 @@
 const express = require('express');
+const Fuse = require('fuse.js');
 const { pool, db } = require('../../server/db');
 const { isNumeric, isZipCode, keysToCamel } = require('../utils');
 const { updateEventRequirements, updateEventWaivers, getEventsQuery } = require('./eventsUtils');
@@ -8,21 +9,61 @@ const eventRouter = express();
 // get all events
 eventRouter.get('/', async (req, res) => {
   try {
-    const conditions = '';
-    const events = await pool.query(getEventsQuery(conditions));
-    res.status(200).json(keysToCamel(events.rows));
+    const { status, type } = req.query;
+    // const offset = (pageIndex - 1) * pageSize;
+    const search = req.query.searchInput == null ? '' : req.query.searchInput;
+    const timeComparisonDict = {
+      upcoming: `start_datetime >= NOW()`,
+      past: `start_datetime < NOW()`,
+      all: `-1 = -1`,
+    };
+    const typeDict = {
+      food: `event_type = 'Food Running'`,
+      distribution: `event_type = 'Distribution'`,
+      other: `(event_type != 'Food Running' AND event_type != 'Distribution')`,
+      all: `-1 = -1`,
+    };
+    const eventFilter = `
+    SELECT *
+    FROM events
+    LEFT JOIN
+      (SELECT req.event_id AS eid, array_agg(req.requirement ORDER BY req.requirement ASC) AS requirements
+        FROM event_requirements AS req
+        GROUP BY req.event_id) AS r on r.eid = events.event_id
+    LEFT JOIN
+      (SELECT waivers.event_id AS eid, array_agg(to_jsonb(waivers.*) - 'event_id' ORDER BY waivers.name) AS waivers
+        FROM waivers
+        GROUP BY waivers.event_id) AS waivers on waivers.eid = events.event_id
+    WHERE (${timeComparisonDict[status]})
+      AND (${typeDict[type]})
+    `;
+    let events = await db.query(eventFilter);
+    // const events = await db.query(
+    //   `SELECT events.*, requirements, waivers.waivers
+    //   $(eventFilter)
+    //   ORDER BY start_datetime ASC;
+    //   LIMIT $(pageSize) OFFSET $(offset);
+    //   `,
+    //   {
+    //     status,
+    //     type,
+    //     pageSize,
+    //     offset,
+    //     eventFilter,
+    //   },
+    // );
+
+    if (req.query.searchInput) {
+      const searchOptions = {
+        keys: ['name'],
+        threshold: 0.2,
+      };
+      events = new Fuse(events, searchOptions).search(search).map((searchItem) => searchItem.item);
+    }
+
+    res.status(200).json(keysToCamel(events));
   } catch (err) {
     res.status(400).send(err.message);
-  }
-});
-
-// Get Total # Of Events
-eventRouter.get('/total', async (req, res) => {
-  try {
-    const numEvents = await pool.query('SELECT COUNT(*) FROM events');
-    res.status(200).json(numEvents.rows[0]);
-  } catch (err) {
-    res.status(400).json(err);
   }
 });
 
