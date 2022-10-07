@@ -30,14 +30,18 @@ volunteerRouter.get('/', async (req, res) => {
     };
     const eventCondition = eventOptions[eventInterest];
 
+    const driverQuery = driverCondition ? ` AND  ${driverCondition}` : '';
+    const ageQuery = ageCondition ? ` AND  ${ageCondition}` : '';
+    const eventQuery = eventCondition ? ` AND  ${eventCondition}` : '';
+
     const query = `SELECT users.*, availability.availabilities
     FROM users
       LEFT JOIN
         (SELECT user_id, array_agg(to_jsonb(availability.*) - 'user_id' ORDER BY availability.day_of_week) AS availabilities
           FROM availability
           GROUP BY user_id) AS availability on availability.user_id = users.user_id
-    WHERE users.role = 'volunteer' AND ${driverCondition} AND ${ageCondition} AND ${eventCondition}
-    ORDER BY users.first_name, users.last_name`;
+    WHERE users.role = 'volunteer' ${driverQuery} ${ageQuery} ${eventQuery}
+    ORDER BY users.first_name, users.last_name`; // issue with undefined driverCondition & eventCondition
 
     const { rows: volunteers } = await pool.query(query);
     if (searchQuery) {
@@ -90,6 +94,9 @@ volunteerRouter.get('/available', async (req, res) => {
     const eventCondition = eventOptions[eventInterest];
 
     const resData = {};
+
+    const driverQuery = driverCondition ? ` AND  ${driverCondition}` : '';
+    const eventQuery = eventCondition ? ` AND  ${eventCondition}` : '';
     // assume startTime and endTime is a timestamp
     const { rows: volunteers } = await pool.query(
       `SELECT
@@ -103,7 +110,7 @@ volunteerRouter.get('/available', async (req, res) => {
         users.can_drive
       FROM users
       INNER JOIN availability
-      ON users.user_id = availability.user_id AND ${driverCondition} AND ${eventCondition}`,
+      ON users.user_id = availability.user_id ${driverQuery} ${eventQuery}`, // issue with undefined driverCondition & eventCondition
       [],
     );
 
@@ -228,21 +235,21 @@ volunteerRouter.get('/events/:eventId', async (req, res) => {
 });
 
 // get available volunteers at specific date and time
-// volunteerRouter.get('/available/day/:day/start/:startTime/end/:endTime', async (req, res) => {
-//   try {
-//     const day = req.params.day.toLowerCase();
-//     const endTime = req.params.endTime.replace('-', ':');
-//     const startTime = req.params.startTime.replace('-', ':');
-//     // assume startTime and endTime is a timestamp
-//     const volunteers = await pool.query(
-//       'SELECT u.name FROM availability a INNER JOIN "users" u on u.id = a.user_id WHERE day_of_week = $1 and start_time = $2 and end_time = $3',
-//       [day, `${startTime}PST`, `${endTime}PST`],
-//     );
-//     res.status(200).json(volunteers.rows);
-//   } catch (err) {
-//     res.status(500).json(err);
-//   }
-// });
+volunteerRouter.get('/available/day/:day/start/:startTime/end/:endTime', async (req, res) => {
+  try {
+    const { day } = req.params;
+    const endTime = req.params.endTime.replace('-', ':');
+    const startTime = req.params.startTime.replace('-', ':');
+    // assume startTime and endTime is a timestamp
+    const volunteers = await pool.query(
+      'SELECT users.user_id, users.first_name, users.last_name FROM availability INNER JOIN users on users.user_id = availability.user_id WHERE availability.day_of_week = $1 and availability.start_time = $2 and availability.end_time = $3',
+      [day, `${startTime}PST`, `${endTime}PST`],
+    );
+    res.status(200).json(volunteers.rows);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
 
 // get number of volunteers at specific event
 // volunteerRouter.get('/:eventId', async (req, res) => {
