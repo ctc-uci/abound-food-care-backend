@@ -395,7 +395,7 @@ userRouter.put('/roles-skills/:userId', async (req, res) => {
       willingToDrive,
       distance,
     );
-    await db.query(
+    const updatedUser = await db.query(
       `UPDATE users
       SET
         role = $(role),
@@ -413,7 +413,7 @@ userRouter.put('/roles-skills/:userId', async (req, res) => {
         languages = $(languages),
         weight_lifting_ability = $(weightLiftingAbility),
         completed_chowmatch_training = $(completedChowmatchTraining)
-      WHERE user_id = $(userId);`,
+      WHERE user_id = $(userId) RETURNING *;`,
       {
         role,
         foodRunsInterest,
@@ -433,9 +433,7 @@ userRouter.put('/roles-skills/:userId', async (req, res) => {
         userId,
       },
     );
-    const conditions = 'WHERE users.user_id = $1';
-    const updatedUser = await pool.query(getUsersQuery(conditions), [userId]);
-    res.status(200).send(keysToCamel(updatedUser.rows[0]));
+    res.status(200).send(keysToCamel(updatedUser[0]));
   } catch (err) {
     res.status(400).send(err.message);
   }
