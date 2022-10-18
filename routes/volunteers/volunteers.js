@@ -227,12 +227,69 @@ volunteerRouter.get('/events/:eventId', async (req, res) => {
   }
 });
 
-// get available volunteers at specific date and time
-// volunteerRouter.get('/available/day/:day/start/:startTime/end/:endTime', async (req, res) => {
+// get all events a volunteer is signed up for if they are submitted
+volunteerRouter.get('/:userId/:submitted', async (req, res) => {
+  try {
+    const { userId, submitString } = req.params;
+    const submitObj = {
+      submitted: 'TRUE',
+      unsubmitted: 'FALSE',
+    };
+    const submittedEvents = await pool.query(
+      `SELECT volunteer_at_events.event_id, events.name, volunteer_at_events.start_datetime, volunteer_at_events.end_datetime
+      FROM volunteer_at_events LEFT JOIN events
+	    ON events.event_id = volunteer_at_events.event_id
+      WHERE user_id = $1 AND submitted = ${submitObj[submitString]}
+      GROUP BY volunteer_at_events.event_id, events.name, volunteer_at_events.start_datetime, volunteer_at_events.end_datetime`,
+      [userId],
+    );
+    res.status(200).json(keysToCamel(submittedEvents.rows));
+  } catch (err) {
+    res.status(400).json(err.message);
+  }
+});
+
+// get number of volunteer hours a volunteer has
+volunteerRouter.get('/:userId/total-hours', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const numEvents = await pool.query(
+      `SELECT SUM(num_hours)
+      FROM volunteer_at_events
+      WHERE user_id = $1
+      GROUP BY user_id`,
+      [userId],
+    );
+    res.status(200).json(keysToCamel(numEvents.rows[0]));
+  } catch (err) {
+    res.status(400).json(err.message);
+  }
+});
+
+// Sets an event to submitted
+volunteerRouter.post('/:userId/:eventId/submit', async (req, res) => {
+  try {
+    const { userId, eventId } = req.params;
+    isNumeric(eventId, 'Event Id must be a number');
+    const signUp = await pool.query(
+      `UPDATE volunteer_at_events,
+       SET submitted = TRUE`,
+      [userId, eventId],
+    );
+    res.status(200).json(keysToCamel(signUp.rows[0]));
+  } catch (err) {
+    res.status(400).json(err.message);
+  }
+});
+// Updates data of an event
+
+// get all events a volunteer is signed up for if they are submitted
+// i assume this was grabbed when i git pulled - i didnt write this (rayan)
+// volunteerRouter.get('/:userId/:submitted', async (req, res) => {
 //   try {
-//     const day = req.params.day.toLowerCase();
-//     const endTime = req.params.endTime.replace('-', ':');
-//     const startTime = req.params.startTime.replace('-', ':');
+//     const { userId, submitString } = req.params;
+//     const submitObj = {
+//       submitt startTime = req.params.startTime.replace('-', ':');
 //     // assume startTime and endTime is a timestamp
 //     const volunteers = await pool.query(
 //       'SELECT u.name FROM availability a INNER JOIN "users" u on u.id = a.user_id WHERE day_of_week = $1 and start_time = $2 and end_time = $3',
