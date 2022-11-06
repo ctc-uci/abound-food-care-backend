@@ -206,15 +206,15 @@ volunteerHoursRouter.post('/:userId/:eventId', async (req, res) => {
 //   }
 // });
 
-// volunteerHoursRouter.get('/unapproved', async (req, res) => {
-//   try {
-//     const unapprovedHours = await pool.query(
-//       'SELECT * FROM volunteer_hours WHERE approved = False AND submitted = True;',
-//     );
-//     res.status(200).json(unapprovedHours.rows);
-//   } catch (err) {
-//     res.status(500).json(err.message);
-//   }
-// });
+volunteerHoursRouter.get('/unapproved', async (req, res) => {
+  try {
+    const unapprovedHours = await pool.query(
+      'SELECT * FROM volunteer_at_events WHERE approved = false AND declined = false;',
+    );
+    res.status(200).json(unapprovedHours.rows);
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
+});
 
 module.exports = volunteerHoursRouter;
