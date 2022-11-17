@@ -254,5 +254,4 @@ volunteerHoursRouter.post('/:userId/:eventId', async (req, res) => {
 //     res.status(500).json(err.message);
 //   }
 // });
-
 module.exports = volunteerHoursRouter;
