@@ -42,10 +42,7 @@ volunteerHoursRouter.get('/unapproved', async (req, res) => {
 volunteerHoursRouter.get('/unapproved/:eventName', async (req, res) => {
   try {
     const { eventName } = req.params;
-    const conditions =
-      "WHERE volunteer_at_events.approved = False AND volunteer_at_events.declined = False AND events.name ILIKE '%" +
-      eventName +
-      "%'";
+    const conditions = `WHERE volunteer_at_events.approved = False AND volunteer_at_events.declined = False AND events.name ILIKE '%${eventName}%'`;
     const submittedHours = await pool.query(getVolunteerHoursQuery(conditions));
     res.status(200).json(keysToCamel(submittedHours.rows));
   } catch (err) {
@@ -86,7 +83,7 @@ volunteerHoursRouter.get('/approve/:userId/:eventId', async (req, res) => {
   try {
     const { userId, eventId } = req.params;
     await pool.query(
-      'UPDATE volunteer_at_events SET approved = true WHERE user_id = \'' + userId + '\' AND event_id = \'' + eventId + '\'',
+      `UPDATE volunteer_at_events SET approved = true WHERE user_id = '${userId}' AND event_id = '${eventId}'`,
     );
     res.status(200).json();
   } catch (err) {
@@ -98,7 +95,7 @@ volunteerHoursRouter.get('/decline/:userId/:eventId', async (req, res) => {
   try {
     const { userId, eventId } = req.params;
     await pool.query(
-      'UPDATE volunteer_at_events SET approved = false, declined = true WHERE user_id = \'' + userId + '\' AND event_id = \'' + eventId + '\'',
+      `UPDATE volunteer_at_events SET approved = false, declined = true WHERE user_id = '${userId}' AND event_id = '${eventId}'`,
     );
     res.status(200).json();
   } catch (err) {
