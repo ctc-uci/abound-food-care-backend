@@ -1,11 +1,13 @@
 const express = require('express');
+const Fuse = require('fuse.js');
+
 const { pool, db } = require('../../server/db');
 const { keysToCamel, isNumeric, isBoolean } = require('../utils');
 
 const volunteerHoursRouter = express();
 
 const getVolunteerHoursQuery = (conditions = '') =>
-  `SELECT volunteer_at_events.*, to_jsonb(events.*) - 'event_id' as event
+  `SELECT volunteer_at_events.*, to_jsonb(events.*) - 'event_id' as event, to_jsonb(users.*) - 'user_id' as user
   FROM volunteer_at_events
     INNER JOIN
       (SELECT events.*, r.requirements
@@ -16,6 +18,9 @@ const getVolunteerHoursQuery = (conditions = '') =>
           GROUP BY req.event_id)
         AS r on r.event_id = events.event_id)
     AS events on events.event_id = volunteer_at_events.event_id
+    INNER JOIN
+      (SELECT users.* FROM users)
+    AS users ON users.user_id = volunteer_at_events.user_id
     ${conditions};`;
 
 // get all submitted hours
@@ -39,12 +44,23 @@ volunteerHoursRouter.get('/unapproved', async (req, res) => {
   }
 });
 
-volunteerHoursRouter.get('/unapproved/:eventName', async (req, res) => {
+volunteerHoursRouter.get('/unapproved/:query', async (req, res) => {
   try {
-    const { eventName } = req.params;
-    const conditions = `WHERE volunteer_at_events.approved = False AND volunteer_at_events.declined = False AND events.name ILIKE '%${eventName}%'`;
+    const { query } = req.params;
+    const conditions = `WHERE volunteer_at_events.approved = False AND volunteer_at_events.declined = False`;
     const submittedHours = await pool.query(getVolunteerHoursQuery(conditions));
-    res.status(200).json(keysToCamel(submittedHours.rows));
+    const options = {
+      keys: [
+        'event.name',
+        'user.organization',
+        { name: 'volunteer name', getFn: (log) => `${log.user.first_name} ${log.user.last_name}` },
+      ],
+      threshold: 0.2,
+    };
+    const queryReturnedHours = new Fuse(submittedHours.rows, options)
+      .search(query)
+      .map((result) => result.item);
+    res.status(200).json(keysToCamel(queryReturnedHours));
   } catch (err) {
     res.status(400).json(err.message);
   }
