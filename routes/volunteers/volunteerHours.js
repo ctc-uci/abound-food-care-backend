@@ -29,10 +29,32 @@ volunteerHoursRouter.get('/', async (req, res) => {
   }
 });
 
+volunteerHoursRouter.get('/unapproved', async (req, res) => {
+  try {
+    const conditions = `WHERE volunteer_at_events.approved = False AND volunteer_at_events.declined = False`;
+    const submittedHours = await pool.query(getVolunteerHoursQuery(conditions));
+    res.status(200).json(keysToCamel(submittedHours.rows));
+  } catch (err) {
+    res.status(400).json(err.message);
+  }
+});
+
+volunteerHoursRouter.get('/unapproved/:eventName', async (req, res) => {
+  try {
+    const { eventName } = req.params;
+    const conditions = `WHERE volunteer_at_events.approved = False AND volunteer_at_events.declined = False AND events.name ILIKE '%${eventName}%'`;
+    const submittedHours = await pool.query(getVolunteerHoursQuery(conditions));
+    res.status(200).json(keysToCamel(submittedHours.rows));
+  } catch (err) {
+    res.status(400).json(err.message);
+  }
+});
+
 // get all hours for a volunteer
 volunteerHoursRouter.get('/user/:userId/total', async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { userId, eventId } = req.params;
+    isNumeric(eventId, 'Event Id must be a number');
     const conditions = `WHERE volunteer_at_events.user_id = $1 AND approved = $2`;
     const allHours = await pool.query(getVolunteerHoursQuery(conditions), [userId, false]); // set to true in prod
     let numHours = 0;
@@ -54,6 +76,30 @@ volunteerHoursRouter.get('/:userId', async (req, res) => {
     res.status(200).json(keysToCamel(allHours.rows));
   } catch (err) {
     res.status(400).json(err.message);
+  }
+});
+
+volunteerHoursRouter.get('/approve/:userId/:eventId', async (req, res) => {
+  try {
+    const { userId, eventId } = req.params;
+    await pool.query(
+      `UPDATE volunteer_at_events SET approved = true WHERE user_id = '${userId}' AND event_id = '${eventId}'`,
+    );
+    res.status(200).json();
+  } catch (err) {
+    res.status(500).json(err.message);
+  }
+});
+
+volunteerHoursRouter.get('/decline/:userId/:eventId', async (req, res) => {
+  try {
+    const { userId, eventId } = req.params;
+    await pool.query(
+      `UPDATE volunteer_at_events SET approved = false, declined = true WHERE user_id = '${userId}' AND event_id = '${eventId}'`,
+    );
+    res.status(200).json();
+  } catch (err) {
+    res.status(500).json(err.message);
   }
 });
 
@@ -205,16 +251,4 @@ volunteerHoursRouter.post('/:userId/:eventId', async (req, res) => {
 //     res.status(500).json(err.message);
 //   }
 // });
-
-// volunteerHoursRouter.get('/unapproved', async (req, res) => {
-//   try {
-//     const unapprovedHours = await pool.query(
-//       'SELECT * FROM volunteer_hours WHERE approved = False AND submitted = True;',
-//     );
-//     res.status(200).json(unapprovedHours.rows);
-//   } catch (err) {
-//     res.status(500).json(err.message);
-//   }
-// });
-
 module.exports = volunteerHoursRouter;
