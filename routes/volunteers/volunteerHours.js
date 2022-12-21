@@ -67,23 +67,6 @@ volunteerHoursRouter.get('/unapproved/:query', async (req, res) => {
 });
 
 // get all hours for a volunteer
-volunteerHoursRouter.get('/user/:userId/total', async (req, res) => {
-  try {
-    const { userId, eventId } = req.params;
-    isNumeric(eventId, 'Event Id must be a number');
-    const conditions = `WHERE volunteer_at_events.user_id = $1 AND approved = $2`;
-    const allHours = await pool.query(getVolunteerHoursQuery(conditions), [userId, false]); // set to true in prod
-    let numHours = 0;
-    allHours.rows.forEach((hour) => {
-      numHours += hour.num_hours;
-    });
-    res.status(200).json({ count: numHours });
-  } catch (err) {
-    res.status(400).json(err.message);
-  }
-});
-
-// get all hours for a volunteer
 volunteerHoursRouter.get('/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
