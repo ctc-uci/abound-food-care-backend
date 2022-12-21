@@ -34,8 +34,12 @@ eventRouter.get('/', async (req, res) => {
       (SELECT waivers.event_id AS eid, array_agg(to_jsonb(waivers.*) - 'event_id' ORDER BY waivers.name) AS waivers
         FROM waivers
         GROUP BY waivers.event_id) AS waivers on waivers.eid = events.event_id
-    WHERE (${timeComparisonDict[status]})
-      AND (${typeDict[type]})
+    ${
+      status || type
+        ? `WHERE (${timeComparisonDict[status]})
+      AND (${typeDict[type]})`
+        : ''
+    }
     `;
     let events = await db.query(eventFilter);
     // const events = await db.query(
