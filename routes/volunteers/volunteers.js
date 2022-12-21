@@ -228,20 +228,17 @@ volunteerRouter.get('/events/:eventId', async (req, res) => {
 });
 
 // get all events a volunteer is signed up for if they are submitted
-volunteerRouter.get('/:userId/:submitted', async (req, res) => {
+volunteerRouter.get('/logs/:userId', async (req, res) => {
   try {
-    const { userId, submitString } = req.params;
-    const submitObj = {
-      submitted: 'TRUE',
-      unsubmitted: 'FALSE',
-    };
+    const { userId } = req.params;
+    const { submitted } = req.query;
     const submittedEvents = await pool.query(
-      `SELECT volunteer_at_events.event_id, events.name, volunteer_at_events.start_datetime, volunteer_at_events.end_datetime
+      `SELECT volunteer_at_events.event_id, events.name, volunteer_at_events.start_datetime, volunteer_at_events.end_datetime, volunteer_at_events.num_hours
       FROM volunteer_at_events LEFT JOIN events
 	    ON events.event_id = volunteer_at_events.event_id
-      WHERE user_id = $1 AND submitted = ${submitObj[submitString]}
-      GROUP BY volunteer_at_events.event_id, events.name, volunteer_at_events.start_datetime, volunteer_at_events.end_datetime`,
-      [userId],
+      WHERE user_id = $1 AND submitted = $2
+      GROUP BY volunteer_at_events.event_id, events.name, volunteer_at_events.start_datetime, volunteer_at_events.end_datetime, volunteer_at_events.num_hours`,
+      [userId, submitted],
     );
     res.status(200).json(keysToCamel(submittedEvents.rows));
   } catch (err) {
@@ -272,13 +269,33 @@ volunteerRouter.post('/:userId/:eventId/submit', async (req, res) => {
     const { userId, eventId } = req.params;
     isNumeric(eventId, 'Event Id must be a number');
     const signUp = await pool.query(
-      `UPDATE volunteer_at_events,
-       SET submitted = TRUE`,
+      `UPDATE volunteer_at_events
+       SET submitted = TRUE
+       WHERE user_id = $1 AND event_id = $2`,
       [userId, eventId],
     );
     res.status(200).json(keysToCamel(signUp.rows[0]));
   } catch (err) {
     res.status(400).json(err.message);
+  }
+});
+
+volunteerRouter.put('/:userId/:eventId', async (req, res) => {
+  try {
+    const { userId, eventId } = req.params;
+    const { startDatetime, endDatetime } = req.body;
+    const start = new Date(startDatetime);
+    const end = new Date(endDatetime);
+    const diff = end.getTime() - start.getTime();
+    const numHours = parseInt(diff / (60000 * 60), 10);
+    const editedRow = await pool.query(
+      `UPDATE volunteer_at_events SET start_datetime = $1, end_datetime = $2, num_hours = $3 WHERE user_id = $4 AND event_id = $5 RETURNING *`,
+      [startDatetime, endDatetime, numHours, userId, eventId],
+    );
+    // console.log(editedRow)
+    res.status(200).json(keysToCamel(editedRow.rows[0]));
+  } catch (err) {
+    res.status(500).json(err.message);
   }
 });
 // Updates data of an event

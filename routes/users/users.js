@@ -340,7 +340,7 @@ userRouter.put('/general-info/:userId', async (req, res) => {
         userId,
       },
     );
-    const conditions = 'WHERE users.user_id = $1';
+    const conditions = 'WHERE users.user_id = $1  ';
     const updatedUser = await pool.query(getUsersQuery(conditions), [userId]);
     res.status(200).send(keysToCamel(updatedUser.rows[0]));
   } catch (err) {
