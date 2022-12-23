@@ -7,7 +7,7 @@ const { keysToCamel, isNumeric, isBoolean } = require('../utils');
 const volunteerHoursRouter = express();
 
 const getVolunteerHoursQuery = (conditions = '') =>
-  `SELECT volunteer_at_events.*, to_jsonb(events.*) - 'event_id' as event, to_jsonb(users.*) - 'user_id' as user
+  `SELECT volunteer_at_events.*, to_jsonb(events.*) as event, to_jsonb(users.*) - 'user_id' as user
   FROM volunteer_at_events
     INNER JOIN
       (SELECT events.*, r.requirements
