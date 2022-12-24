@@ -5,29 +5,30 @@ const { isNumeric, keysToCamel } = require('../utils');
 
 const volunteerRouter = express();
 
+const driverOptions = {
+  All: 'TRUE',
+  'Can Drive': 'users.can_drive',
+  'Cannot Drive': 'NOT users.can_drive',
+};
+
+const ageOptions = {
+  All: 'TRUE',
+  Adult: `date_part('year', age(users.birthdate)) >= 18`,
+  Minor: `date_part('year', age(users.birthdate)) < 18`,
+};
+
+const eventOptions = {
+  All: 'TRUE',
+  Distributions: 'users.distribution_interest',
+  'Food Running': 'users.food_runs_interest',
+};
+
 // get all volunteers
 volunteerRouter.get('/', async (req, res) => {
   try {
     const { driverOption, ageOption, eventInterest, searchQuery } = req.query;
-    const driverOptions = {
-      All: 'TRUE',
-      'Can Drive': 'users.can_drive',
-      'Cannot Drive': 'NOT users.can_drive',
-    };
     const driverCondition = driverOptions[driverOption];
-
-    const ageOptions = {
-      All: 'TRUE',
-      Adult: `date_part('year', age(users.birthdate)) >= 18`,
-      Minor: `date_part('year', age(users.birthdate)) < 18`,
-    };
     const ageCondition = ageOptions[ageOption];
-
-    const eventOptions = {
-      All: 'TRUE',
-      Distributions: 'users.distribution_interest',
-      'Food Running': 'users.food_runs_interest',
-    };
     const eventCondition = eventOptions[eventInterest];
 
     const driverQuery = driverCondition ? ` AND  ${driverCondition}` : '';
@@ -61,36 +62,10 @@ volunteerRouter.get('/', async (req, res) => {
   }
 });
 
-// Get Total # Of Events
-volunteerRouter.get('/total', async (req, res) => {
-  try {
-    const numVolunteers = await pool.query(
-      `SELECT COUNT(*) FROM users
-        WHERE role = $1`,
-      ['volunteer'],
-    );
-    res.status(200).json(numVolunteers.rows[0]);
-  } catch (err) {
-    res.status(400).json(err);
-  }
-});
-
 volunteerRouter.get('/available', async (req, res) => {
   try {
     const { driverOption, eventInterest, searchQuery } = req.query;
-
-    const driverOptions = {
-      All: 'TRUE',
-      'Can Drive': 'users.can_drive',
-      'Cannot Drive': 'NOT users.can_drive',
-    };
     const driverCondition = driverOptions[driverOption];
-
-    const eventOptions = {
-      All: 'TRUE',
-      Distributions: 'users.distribution_interest',
-      'Food Running': 'users.food_runs_interest',
-    };
     const eventCondition = eventOptions[eventInterest];
 
     const resData = {};
@@ -141,7 +116,7 @@ volunteerRouter.get('/available', async (req, res) => {
       });
     }
 
-    res.status(200).json(resData);
+    res.status(200).json(keysToCamel(resData));
   } catch (err) {
     res.status(400).json(err.message);
   }
@@ -245,7 +220,7 @@ volunteerRouter.get('/available/day/:day/start/:startTime/end/:endTime', async (
       'SELECT users.user_id, users.first_name, users.last_name FROM availability INNER JOIN users on users.user_id = availability.user_id WHERE availability.day_of_week = $1 and availability.start_time = $2 and availability.end_time = $3',
       [day, `${startTime}PST`, `${endTime}PST`],
     );
-    res.status(200).json(volunteers.rows);
+    res.status(200).json(keysToCamel(volunteers.rows));
   } catch (err) {
     res.status(500).json(err);
   }
