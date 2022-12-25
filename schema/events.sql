@@ -1,5 +1,14 @@
 DROP TYPE IF EXISTS requirements CASCADE;
-CREATE TYPE requirements AS ENUM('drive', 'adult', 'minor', 'first aid', 'serve safe', 'transportation', 'warehouse', 'food service');
+CREATE TYPE requirements AS ENUM (
+	'canDrive',
+	'isAdult',
+	'isMinor',
+	'firstAidTraining',
+	'serveSafeKnowledge',
+	'transportationExperience',
+	'movingWarehouseExperience',
+	'foodServiceIndustryKnowledge'
+);
 
 DROP TABLE IF EXISTS events CASCADE;
 CREATE TABLE events (
