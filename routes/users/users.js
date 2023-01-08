@@ -384,7 +384,6 @@ userRouter.put('/roles-skills/:userId', async (req, res) => {
       foodServiceIndustryKnowledge,
       languages,
       weightLiftingAbility,
-      completedChowmatchTraining,
       canDrive,
       willingToDrive,
       vehicleType,
@@ -399,7 +398,6 @@ userRouter.put('/roles-skills/:userId', async (req, res) => {
       movingWarehouseExperience,
       foodServiceIndustryKnowledge,
       weightLiftingAbility,
-      completedChowmatchTraining,
       canDrive,
       willingToDrive,
       distance,
@@ -420,8 +418,7 @@ userRouter.put('/roles-skills/:userId', async (req, res) => {
         moving_warehouse_experience = $(movingWarehouseExperience),
         food_service_industry_knowledge = $(foodServiceIndustryKnowledge),
         languages = $(languages),
-        weight_lifting_ability = $(weightLiftingAbility),
-        completed_chowmatch_training = $(completedChowmatchTraining)
+        weight_lifting_ability = $(weightLiftingAbility)
       WHERE user_id = $(userId) RETURNING *;`,
       {
         role,
@@ -434,7 +431,6 @@ userRouter.put('/roles-skills/:userId', async (req, res) => {
         foodServiceIndustryKnowledge,
         languages,
         weightLiftingAbility,
-        completedChowmatchTraining,
         canDrive,
         willingToDrive,
         vehicleType,

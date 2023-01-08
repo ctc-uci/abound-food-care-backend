@@ -14,13 +14,11 @@ const validateRolesAndSkills = (
   movingWarehouseExperience,
   foodServiceIndustryKnowledge,
   weightLiftingAbility,
-  completedChowmatchTraining,
   canDrive,
   willingToDrive,
   distance,
 ) => {
   isNumeric(weightLiftingAbility, 'Weight Lifting Ability is not a Number');
-  isBoolean(completedChowmatchTraining, 'Completed Chowmatch Training is not a Boolean Value');
   if (foodRunsInterest) {
     isBoolean(foodRunsInterest, 'Food Runs Interest is not a Boolean Value');
   }
