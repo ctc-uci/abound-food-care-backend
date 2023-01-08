@@ -324,8 +324,8 @@ userRouter.put('/general-info/:userId', async (req, res) => {
       `UPDATE users
       SET
         birthdate = $(birthdate),
-        firstName = $(firstName),
-        lastName = $(lastName),
+        first_name = $(firstName),
+        last_name = $(lastName),
         organization = $(organization),
         phone = $(phone),
         preferred_contact_method = $(preferredContactMethod),
