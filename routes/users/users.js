@@ -308,6 +308,9 @@ userRouter.put('/general-info/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const {
+      birthdate,
+      firstName,
+      lastName,
       organization,
       phone,
       preferredContactMethod,
@@ -320,6 +323,9 @@ userRouter.put('/general-info/:userId', async (req, res) => {
     await db.query(
       `UPDATE users
       SET
+        birthdate = $(birthdate),
+        firstName = $(firstName),
+        lastName = $(lastName),
         organization = $(organization),
         phone = $(phone),
         preferred_contact_method = $(preferredContactMethod),
@@ -330,6 +336,9 @@ userRouter.put('/general-info/:userId', async (req, res) => {
     WHERE user_id = $(userId)
     RETURNING *;`,
       {
+        birthdate,
+        firstName,
+        lastName,
         organization,
         phone,
         preferredContactMethod,
@@ -439,11 +448,12 @@ userRouter.put('/roles-skills/:userId', async (req, res) => {
   }
 });
 
-// update user DUI and criminal history
-userRouter.put('/dui-criminal/:userId', async (req, res) => {
+// update user additional info
+userRouter.put('/additional-info/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const {
+      completedChowmatchTraining,
       criminalHistory,
       criminalHistoryDetails,
       duiHistory,
@@ -461,6 +471,7 @@ userRouter.put('/dui-criminal/:userId', async (req, res) => {
         ${additionalInformation ? ', additional_information = $(additionalInformation)' : ''}
       WHERE user_id = $(userId);`,
       {
+        completedChowmatchTraining,
         criminalHistory,
         criminalHistoryDetails,
         duiHistory,
