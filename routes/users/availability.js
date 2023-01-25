@@ -17,7 +17,9 @@ availabilityRouter.get('/:userId', async (req, res) => {
     const { userId } = req.params;
     const conditions = `WHERE user_id = $1`;
     const user = await pool.query(getAvailabilitiesQuery(conditions), [userId]);
-    res.status(200).send(keysToCamel(user.rows[0]));
+    res
+      .status(200)
+      .send(keysToCamel(user.rows.length > 0 ? user.rows[0] : { userId, availabilities: [] }));
   } catch (err) {
     res.status(400).send(err.message);
   }
