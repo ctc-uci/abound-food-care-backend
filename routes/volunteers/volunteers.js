@@ -156,41 +156,6 @@ volunteerRouter.get('/:userId', async (req, res) => {
   }
 });
 
-// add a volunteer to an event
-volunteerRouter.post('/:userId/:eventId', async (req, res) => {
-  try {
-    const { userId, eventId } = req.params;
-    isNumeric(eventId, 'Event Id must be a number');
-    const signUp = await pool.query(
-      `INSERT INTO volunteer_at_events
-      (user_id, event_id)
-      VALUES ($1, $2)
-      RETURNING *;`,
-      [userId, eventId],
-    );
-    res.status(200).json(keysToCamel(signUp.rows[0]));
-  } catch (err) {
-    res.status(400).json(err.message);
-  }
-});
-
-// remove a volunteer from an event
-volunteerRouter.delete('/:userId/:eventId', async (req, res) => {
-  try {
-    const { userId, eventId } = req.params;
-    isNumeric(eventId, 'Event Id must be a number');
-    const deletedSignUp = await pool.query(
-      `DELETE FROM volunteer_at_events as v
-      WHERE v.user_id = $1 AND v.event_id = $2
-      RETURNING *;`,
-      [userId, eventId],
-    );
-    res.status(200).json(keysToCamel(deletedSignUp.rows[0]));
-  } catch (err) {
-    res.status(400).json(err.message);
-  }
-});
-
 // get all volunteer ids for a specific event
 volunteerRouter.get('/events/:eventId', async (req, res) => {
   try {
@@ -245,6 +210,41 @@ volunteerRouter.get('/available/day/:day/start/:startTime/end/:endTime', async (
     }
   } catch (err) {
     res.status(500).json(err);
+  }
+});
+
+// add a volunteer to an event
+volunteerRouter.post('/:userId/:eventId', async (req, res) => {
+  try {
+    const { userId, eventId } = req.params;
+    isNumeric(eventId, 'Event Id must be a number');
+    const signUp = await pool.query(
+      `INSERT INTO volunteer_at_events
+      (user_id, event_id)
+      VALUES ($1, $2)
+      RETURNING *;`,
+      [userId, eventId],
+    );
+    res.status(200).json(keysToCamel(signUp.rows[0]));
+  } catch (err) {
+    res.status(400).json(err.message);
+  }
+});
+
+// remove a volunteer from an event
+volunteerRouter.delete('/:userId/:eventId', async (req, res) => {
+  try {
+    const { userId, eventId } = req.params;
+    isNumeric(eventId, 'Event Id must be a number');
+    const deletedSignUp = await pool.query(
+      `DELETE FROM volunteer_at_events as v
+      WHERE v.user_id = $1 AND v.event_id = $2
+      RETURNING *;`,
+      [userId, eventId],
+    );
+    res.status(200).json(keysToCamel(deletedSignUp.rows[0]));
+  } catch (err) {
+    res.status(400).json(err.message);
   }
 });
 
