@@ -7,8 +7,8 @@ const volunteerRouter = express();
 
 const driverOptions = {
   All: 'TRUE',
-  'Can Drive': 'users.can_drive',
-  'Cannot Drive': 'NOT users.can_drive',
+  'Can Drive': 'users.willing_to_drive',
+  'Cannot Drive': 'NOT users.willing_to_drive',
 };
 
 const ageOptions = {
@@ -27,9 +27,9 @@ const eventOptions = {
 volunteerRouter.get('/', async (req, res) => {
   try {
     const { driverOption, ageOption, eventInterest, searchQuery } = req.query;
-    const driverCondition = driverOptions[driverOption];
-    const ageCondition = ageOptions[ageOption];
-    const eventCondition = eventOptions[eventInterest];
+    const driverCondition = driverOptions[driverOption] ?? '';
+    const ageCondition = ageOptions[ageOption] ?? '';
+    const eventCondition = eventOptions[eventInterest] ?? '';
 
     const driverQuery = driverCondition ? ` AND  ${driverCondition}` : '';
     const ageQuery = ageCondition ? ` AND  ${ageCondition}` : '';
@@ -65,8 +65,8 @@ volunteerRouter.get('/', async (req, res) => {
 volunteerRouter.get('/available', async (req, res) => {
   try {
     const { driverOption, eventInterest, searchQuery } = req.query;
-    const driverCondition = driverOptions[driverOption];
-    const eventCondition = eventOptions[eventInterest];
+    const driverCondition = driverOptions[driverOption] ?? '';
+    const eventCondition = eventOptions[eventInterest] ?? '';
 
     const resData = {};
 
@@ -212,15 +212,37 @@ volunteerRouter.get('/events/:eventId', async (req, res) => {
 // get available volunteers at specific date and time
 volunteerRouter.get('/available/day/:day/start/:startTime/end/:endTime', async (req, res) => {
   try {
+    const { driverOption, ageOption, eventInterest, searchQuery } = req.query;
     const { day } = req.params;
+    const driverCondition = driverOptions[driverOption] ?? '';
+    const ageCondition = ageOptions[ageOption] ?? '';
+    const eventCondition = eventOptions[eventInterest] ?? '';
+
+    const driverQuery = driverCondition ? ` AND  ${driverCondition}` : '';
+    const ageQuery = ageCondition ? ` AND  ${ageCondition}` : '';
+    const eventQuery = eventCondition ? ` AND  ${eventCondition}` : '';
     const endTime = req.params.endTime.replace('-', ':');
     const startTime = req.params.startTime.replace('-', ':');
     // assume startTime and endTime is a timestamp
-    const volunteers = await pool.query(
-      'SELECT users.user_id, users.first_name, users.last_name, users.birthdate, users.willing_to_drive FROM availability INNER JOIN users on users.user_id = availability.user_id WHERE availability.day_of_week = $1 and availability.start_time = $2 and availability.end_time = $3',
+    const { rows: volunteers } = await pool.query(
+      `SELECT users.user_id, users.first_name, users.last_name, users.birthdate, users.willing_to_drive
+      FROM availability INNER JOIN users on users.user_id = availability.user_id
+      WHERE availability.day_of_week = $1 and availability.start_time = $2 and availability.end_time = $3
+      AND users.role = 'volunteer' ${driverQuery} ${ageQuery} ${eventQuery}`,
       [day, `${startTime}PST`, `${endTime}PST`],
     );
-    res.status(200).json(keysToCamel(volunteers.rows));
+    if (searchQuery) {
+      const options = {
+        keys: ['first_name', 'last_name', 'email', 'phone', 'address_city', 'address_state'],
+        threshold: 0.2,
+      };
+      const searchVolunteers = new Fuse(volunteers, options)
+        .search(searchQuery)
+        .map((result) => result.item);
+      res.status(200).json(keysToCamel(searchVolunteers));
+    } else {
+      res.status(200).json(keysToCamel(volunteers));
+    }
   } catch (err) {
     res.status(500).json(err);
   }
