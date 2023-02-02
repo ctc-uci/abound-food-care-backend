@@ -217,7 +217,7 @@ volunteerRouter.get('/available/day/:day/start/:startTime/end/:endTime', async (
     const startTime = req.params.startTime.replace('-', ':');
     // assume startTime and endTime is a timestamp
     const volunteers = await pool.query(
-      'SELECT users.user_id, users.first_name, users.last_name FROM availability INNER JOIN users on users.user_id = availability.user_id WHERE availability.day_of_week = $1 and availability.start_time = $2 and availability.end_time = $3',
+      'SELECT users.user_id, users.first_name, users.last_name, users.birthdate, users.willing_to_drive FROM availability INNER JOIN users on users.user_id = availability.user_id WHERE availability.day_of_week = $1 and availability.start_time = $2 and availability.end_time = $3',
       [day, `${startTime}PST`, `${endTime}PST`],
     );
     res.status(200).json(keysToCamel(volunteers.rows));
