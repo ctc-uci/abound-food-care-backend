@@ -1,6 +1,6 @@
 const express = require('express');
 const Fuse = require('fuse.js');
-const { pool } = require('../../server/db');
+const { db, pool } = require('../../server/db');
 const { isBoolean, isNumeric, keysToCamel } = require('../utils');
 
 const volunteerRouter = express();
@@ -122,23 +122,6 @@ volunteerRouter.get('/available', async (req, res) => {
   }
 });
 
-// get # of events that volunteer is signed up for
-volunteerRouter.get('/:userId/total-events', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const numEvents = await pool.query(
-      `SELECT COUNT(*)
-      FROM volunteer_at_events
-      WHERE user_id = $1
-      GROUP BY user_id`,
-      [userId],
-    );
-    res.status(200).json(keysToCamel(numEvents.rows[0]?.count ?? 0));
-  } catch (err) {
-    res.status(400).json(err.message);
-  }
-});
-
 // get all event ids a volunteer is signed up for
 volunteerRouter.get('/:userId', async (req, res) => {
   try {
@@ -179,15 +162,17 @@ volunteerRouter.get('/logs/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const { submitted } = req.query;
-    const submittedEvents = await pool.query(
-      `SELECT volunteer_at_events.event_id, events.name, volunteer_at_events.start_datetime, volunteer_at_events.end_datetime, volunteer_at_events.num_hours
+    const submittedEvents = await db.query(
+      `SELECT volunteer_at_events.event_id, events.name,
+      volunteer_at_events.start_datetime, volunteer_at_events.end_datetime, volunteer_at_events.num_hours,
+      volunteer_at_events.submitted, volunteer_at_events.approved, volunteer_at_events.declined
       FROM volunteer_at_events LEFT JOIN events
 	    ON events.event_id = volunteer_at_events.event_id
-      WHERE user_id = $(user_id) ${submitted !== null ? 'AND submitted = $(submitted)' : ''}
-      GROUP BY volunteer_at_events.event_id, events.name, volunteer_at_events.start_datetime, volunteer_at_events.end_datetime, volunteer_at_events.num_hours`,
+      WHERE user_id = $(userId) ${submitted != null ? 'AND submitted = $(submitted)' : ''}
+      GROUP BY volunteer_at_events.event_id, events.name, volunteer_at_events.start_datetime, volunteer_at_events.end_datetime, volunteer_at_events.num_hours, volunteer_at_events.submitted, volunteer_at_events.approved, volunteer_at_events.declined`,
       { userId, submitted },
     );
-    res.status(200).json(keysToCamel(submittedEvents.rows));
+    res.status(200).json(keysToCamel(submittedEvents));
   } catch (err) {
     res.status(400).json(err.message);
   }
@@ -290,7 +275,7 @@ volunteerRouter.put('/:userId/:eventId', async (req, res) => {
       diff = end.getTime() - start.getTime();
       numHours = parseInt(diff / (60000 * 60), 10);
     }
-    const editedRow = await pool.query(
+    const editedRow = await db.query(
       `UPDATE volunteer_at_events SET
       ${start ? 'start_datetime = $(startDatetime),' : ''}
       ${end ? 'end_datetime = $(endDatetime),' : ''}
