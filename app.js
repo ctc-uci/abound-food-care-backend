@@ -17,7 +17,11 @@ const PORT = process.env.PORT || 3001;
 require('dotenv').config();
 
 const corsOptions = {
-  origin: `${process.env.REACT_APP_HOST}:${process.env.REACT_APP_PORT}`,
+  origin: `${
+    !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
+      ? process.env.REACT_APP_HOST
+      : process.env.REACT_APP_PROD_HOST
+  }`,
   credentials: true, // access-control-allow-credentials:true
   optionSuccessStatus: 200,
 };
