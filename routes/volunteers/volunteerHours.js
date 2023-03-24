@@ -78,6 +78,18 @@ volunteerHoursRouter.get('/:userId', async (req, res) => {
   }
 });
 
+// get all hours for a volunteer
+volunteerHoursRouter.get('/:userId/approved', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const conditions = `WHERE volunteer_at_events.user_id = $1 AND volunteer_at_events.approved = True`;
+    const allHours = await pool.query(getVolunteerHoursQuery(conditions), [userId]);
+    res.status(200).json(keysToCamel(allHours.rows));
+  } catch (err) {
+    res.status(400).json(err.message);
+  }
+});
+
 volunteerHoursRouter.get('/approve/:userId/:eventId', async (req, res) => {
   try {
     const { userId, eventId } = req.params;
