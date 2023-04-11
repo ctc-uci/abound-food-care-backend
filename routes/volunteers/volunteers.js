@@ -286,7 +286,7 @@ volunteerRouter.put('/:userId/:eventId', async (req, res) => {
       RETURNING *`,
       { startDatetime, endDatetime, numHours, userId, eventId },
     );
-    res.status(200).json(keysToCamel(editedRow.rows[0]));
+    res.status(200).json(keysToCamel(editedRow[0]));
   } catch (err) {
     res.status(500).json(err.message);
   }
